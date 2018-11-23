@@ -1,12 +1,10 @@
 /******************************************************************************
- * Copyright 2015 Vowstar Co., Ltd.
+ * Copyright 2018 Vankia Co., Ltd.
  *
  * FileName: main.c
  *
  * Description: entry file of user application
  *
- * Modification history:
- *     2015/1/23, v1.0 create this file.
 *******************************************************************************/
 
 #include "osapi.h"
