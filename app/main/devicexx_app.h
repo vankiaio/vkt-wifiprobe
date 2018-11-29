@@ -21,6 +21,8 @@ typedef enum {
     ZGMODE,
     ZGNMEA,
     ZGRUN,
+    FIRCON,
+    POSTBIND,
     HTTP_CON,
     HTTP_SEND,
     HTTP_SEND1,
@@ -40,13 +42,16 @@ extern uint32_t ICACHE_FLASH_ATTR flash_rom_get_size_byte(void);
 extern uint8_t at[];
 extern at_state_t at_state;
 extern uint8_t zgmode[] ;
+extern struct espconn pespconn;
 extern uint8_t sniffer_flag;
 extern os_timer_t temer_10s;
 extern uint8_t send_flag;
-
-
+extern uint8_t bind_flag;
+extern uint8_t *loginName;
+extern uint8_t *loginPwd;
+extern uint8_t http_create[];
 void power_on(void);
-
+void update_post_bind(void);
 
 // Save user data to last 15, 14, 13 sector of flash
 #define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)

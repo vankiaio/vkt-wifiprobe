@@ -1,10 +1,12 @@
 /******************************************************************************
- * Copyright 2018 Vankia Co., Ltd.
+ * Copyright 2015 Vowstar Co., Ltd.
  *
  * FileName: main.c
  *
  * Description: entry file of user application
  *
+ * Modification history:
+ *     2015/1/23, v1.0 create this file.
 *******************************************************************************/
 
 #include "osapi.h"
@@ -24,11 +26,30 @@
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
 
+
+
+struct softap_config softap_cfg;
+uint8 ssid[]="vankia_8266";         //wifi√˚
+uint8 password[]="";     //wifi√‹¬Î
+
+void ICACHE_FLASH_ATTR
+user_set_softap_config(void)
+{
+    wifi_softap_get_config(&softap_cfg); // Get config first.
+    wifi_set_opmode(SOFTAP_MODE);           //…Ë÷√Œ™AP MODE
+    os_strcpy(softap_cfg.ssid, ssid);          //ssid√˚≥∆
+    os_strcpy(softap_cfg.password, password);  //√‹¬Î
+    softap_cfg.authmode = AUTH_WPA_WPA2_PSK;
+    softap_cfg.ssid_len = 0; // or its actual length
+    softap_cfg.max_connection = 4; // how many stations can connect to ESP8266 softAP at most.
+    wifi_softap_set_config(&softap_cfg);      //…Ë÷√WIFI’ ∫≈∫Õ√‹¬Î
+}
+
 void ICACHE_FLASH_ATTR system_init_done()
 {
     // Reset linux, MACOS or Windows cygwin terminal
     // Because serial port may lost data when boot, output CRLF.
-    os_printf("\r\n\r\n\r\n\r\n");
+
      //Draw vankia logo
 
     os_printf("\r\n\r\n\r\n\
@@ -52,7 +73,10 @@ void ICACHE_FLASH_ATTR system_init_done()
     os_printf(KNRM);
     // Init platform
     platform_init();
+
 }
+
+
 
 ICACHE_FLASH_ATTR void main(int argc, char *argv[])
 {
@@ -80,8 +104,8 @@ ICACHE_FLASH_ATTR void main(int argc, char *argv[])
     os_delay_us(100);
 
     // Set Wi-Fi mode
-    wifi_set_opmode(STATIONAP_MODE);
-
-    vowstar_set_ssid_prefix("Vankia_");
+//    wifi_set_opmode(SOFTAP_MODE);//STATIONAP_MODE
+//    vowstar_set_ssid_prefix("Vankia_WP_");
+    //    user_set_softap_config();
     system_init_done_cb(system_init_done);
 }
