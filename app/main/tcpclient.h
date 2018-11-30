@@ -10,8 +10,8 @@
 
 extern os_timer_t checkTimer_wifistate;
 //extern struct espconn user_tcp_conn;
-extern struct espconn respond_espconn ;
+extern struct espconn  tcpserver; ;
 extern uint8_t upgrade_tcp;
 extern uint8_t http_head[];
-
+extern uint8_t http_data[];
 #endif /* APP_MAIN_TCPCLIENT_H_ */

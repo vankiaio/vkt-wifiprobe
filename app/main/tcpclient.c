@@ -15,46 +15,52 @@ os_timer_t checkTimer_wifistate;
 //struct espconn user_tcp_conn;
 uint8_t upgrade_tcp;
 uint8_t wifi_state = 0;
-struct espconn respond_espconn ;
-uint8_t flag = 0;
+uint8_t connet_flag = 0;
+uint8_t count = 0;
 
-//http 服务器
 uint8_t http_head[] = {
-        "HTTP/1.0 200 OK\r\n"\
-        "Content-Type: text/html;charset=gbk\r\n"\
-        "Cache-Control: private\r\n"\
-        "Connection: close\r\n"\
-        "\r\n"\
-        "<!DOCTYPE html>"\
-        "<html>"\
-        "<head>"\
-        "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">"\
-        "<meta name=\"viewport\" content=\"width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;\">"\
-        "<meta name=\"renderer\" content=\"webkit|ie-comp|ie-stand\">"\
-        "<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">"\
-        "<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black\">"\
-        "<meta name=\"format-detection\" content=\"telephone=no\">"\
-        "<meta content=\"email=no\" name=\"format-detection\" />"\
-        "<title></title>"\
-        "</head>"\
-        "<style type=\"text/css\">"\
-        "body{overflow-x:hidden;}"\
-        "img{width: 100%;display: block;}"\
-        "</style>"\
-        "<body>"\
-        "<form action=\"\" method=\"post\">"\
-        "<input type=\"text\" name=\"loginName\" value=\"\" placeholder=\"请输入您的用户名\"><br/>"\
-        "<input type=\"password\" name=\"loginPwd\" value=\"\" placeholder=\"请输入您的密码\"><br/>"\
-        "<button id=\"loginbtn\" type=\"submit\" class=\"positive\" name=\"submit\" >绑定</button>"\
-        "<p>                    </p>"\
-        "</form>"\
-        "<script language=\"javascript\">var myTime = setTimeout(\"Timeout()\", 10000);function resetTime(){clearTimeout(myTime);myTime = setTimeout('Timeout()', 10000); }function Timeout() {window.location.reload();}document.documentElement.onkeydown=resetTime;document.documentElement.onmousemove=resetTime;var oDiv = document.getElementById('loginbtn');oDiv.onclick = function(){resetTime;}</script>"\
-        "</script>"\
-        "</body>"\
-        "</html>"\
-        };//718
-
-
+   "HTTP/1.0 200 OK\r\n"\
+   "Content-Type: text/html;charset=gbk\r\n"\
+   "Cache-Control: private\r\n"\
+   "Connection: close\r\n"\
+   "\r\n"\
+   "<!DOCTYPE html>"\
+   "<html>"\
+   "<head>"\
+   "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">"\
+   "<meta name=\"viewport\" content=\"width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;\">"\
+   "<meta name=\"renderer\" content=\"webkit|ie-comp|ie-stand\">"\
+   "<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">"\
+   "<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black\">"\
+   "<meta name=\"format-detection\" content=\"telephone=no\">"\
+   "<meta content=\"email=no\" name=\"format-detection\" />"\
+   "<title></title>"\
+   "</head>"\
+   "<style type=\"text/css\">"\
+   "body{overflow-x:hidden;}"\
+   "img{width: 100%;display: block;}"\
+   "</style>"\
+   "<body>"\
+   "<form action=\"\" method=\"post\">"\
+   "<input type=\"text\" name=\"loginName\" value=\"\" placeholder=\"请输入您的用户名\"><br/>"\
+   "<input type=\"password\" name=\"loginPwd\" value=\"\" placeholder=\"请输入您的密码\"><br/>"\
+   "<button id=\"loginbtn\" type=\"submit\" class=\"positive\" name=\"submit\" >绑定</button>"\
+   "<p>                    </p>"\
+   "</form>"\
+   "</body>"\
+   "</html>"\
+   };//718
+//"<script language=\"javascript\">"\
+//"var myTime = setTimeout(\"Timeout()\", 10000);"\
+//"function resetTime(){clearTimeout(myTime);"\
+//"myTime = setTimeout('Timeout()', 10000); }"\
+//"function Timeout() {"\
+//"window.location.reload();}"\
+//"document.documentElement.onkeydown=resetTime;"\
+//"document.documentElement.onmousemove=resetTime;"\
+//"var oDiv = document.getElementById('loginbtn');"\
+//"oDiv.onclick = function(){resetTime;}"\
+//"</script>"\
 //http 服务器
 struct espconn tcpserver;
 uint8_t http_data[] = {
@@ -63,8 +69,7 @@ uint8_t http_data[] = {
         "Content-Disposition:attachment;filename=1.txt\r\n"\
         "\r\n"\
         "get data"\
-        "\r\n"
-};
+        "\r\n"};
 
 //http 服务器
 void ICACHE_FLASH_ATTR
@@ -88,13 +93,12 @@ tcpclient_sent_cb(void *arg)//发送回调
 {
     struct espconn *pespconn = (struct espconn *)arg;
 
-//    espconn_send(pespconn,http_data,sizeof(http_data));
-    if(flag == 0)
+
+    if(connet_flag == 0)
     {
         os_printf("回调断开\n");
         espconn_disconnect(pespconn);//断开连接
     }
-
     os_printf("\r\n发送回调");
 }
 
@@ -102,6 +106,9 @@ tcpclient_sent_cb(void *arg)//发送回调
 void ICACHE_FLASH_ATTR
 tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
 {
+    count++;
+    os_printf("\n\n+++++++++++++++++++count = %d\n",count);
+
     char * http_flg = NULL;
     char * name_addr = NULL;
     char * pwd_addr  = NULL;
@@ -113,11 +120,10 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
 
     http_flg = strstr(pdata,"loginName");
 
-//    http_flg = strstr(pdata,"btn=down");
     if (http_flg != NULL)
     {
-        os_printf("send http_create %s\n",http_create);
-//        espconn_send(pespconn, http_data, sizeof(http_data));
+
+
         name_addr = strstr(pdata,"loginName");
         pwd_addr = strstr(pdata,"&loginPwd");
         sub_addr = strstr(pdata,"&submit=");
@@ -133,16 +139,15 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
         loginPwd[pwd_len] = '\0';
         os_printf("\n%s    %s\n",loginName,loginPwd);
 
-        if(0!=os_strcmp(loginName,""))
-        {
-            os_printf("first \n");
+
+        if(0!=os_strcmp(loginName,"") || 0!=os_strcmp(loginPwd,"")) {
+            os_memcpy(&tcpserver,pespconn,sizeof(pespconn));
+
+            char *honld_on="验证中请稍后..";
+            os_memcpy(http_head+979,honld_on,14);
+            connet_flag = 1;
+            espconn_send(&tcpserver,http_head,sizeof(http_head));
             update_post_bind();
-        }
-        else
-        {
-            os_printf("else \n");
-            os_memcpy(&respond_espconn,pespconn,sizeof(pespconn));
-            flag = 1;
         }
 
     } else {
@@ -180,15 +185,14 @@ tcp_server(void)//开启tcp服务器
     espconn_regist_connectcb(&tcpserver, tcpserver_listen);//链接成功回调
     espconn_accept(&tcpserver);//开启TCP服务器
     espconn_regist_time(&tcpserver, 30, 0);//设置服务器超时时间为1秒
+
+
     os_printf("Hello Esp8266!\r\n");
 }
 
 
 
 
-
-//
-//
 //
 //void ICACHE_FLASH_ATTR uart_tcp_send(void *arg)
 //{
@@ -273,7 +277,7 @@ void Check_WifiState(void) {
 		}
 	}else
 	    wifi_state++;
-	if(wifi_state == 10)
+	if(wifi_state == 20)
 	{
 	    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 	    wifi_state = 0;

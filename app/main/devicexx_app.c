@@ -307,7 +307,6 @@ str_ascii_str_bind(char * bind_body)
     os_memcpy(http_post_bind+ 75, str, len*2+4);
     os_memset(http_post_bind+79+len*2,'\0',sizeof(char)*(os_strlen(http_post_bind)-79-len*2));
 
-    os_printf("0send http_create %s\n",http_post_bind);
 
     json_len = len*2+1;
     data_len = json_len+51;
@@ -360,7 +359,7 @@ update_post_bind()
     // Perform a Device++ request
 //    dxx_http_request(parameter_timestamp, body, device_post_callback);
     VOWSTAR_WAN_DEBUG("%s: body %s\n", __func__, bind_body);
-    os_printf("send http_create %s\n",http_create);
+
     str_ascii_str_bind(bind_body);
     // Free memory
     if (bind_body)
@@ -596,7 +595,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 //	}
 	os_printf("rev_len %d :%s \r\n",length, pdata);
 	os_printf("----------------------------------------------\n");
-//	espconn_sent(&user_tcp_conn, uart_receive_at, length);
+	espconn_sent(&tcpserver, uart_receive_at, length);
 
 	// Send back what received
 //	uart_send(pdata, length);
@@ -869,9 +868,11 @@ uart_receive(const uint8_t * pdata, uint16_t length)
         }else if(os_strstr(uart_receive_at,"e8aebee5a487e5b7b2e7bb91e5ae9a"))//绑定成功
         {
             char *success_str="设备已成功绑定";
+
             os_printf("http_head[600]%c%c%c%c%c%c%c%c\n",http_head[940],http_head[941],http_head[942],http_head[943],http_head[944],http_head[945],http_head[946],http_head[947]);
             os_memcpy(http_head+979,success_str,14);
-            espconn_send(&respond_espconn,http_head,os_strlen(http_head));
+            espconn_send(&tcpserver,http_head,os_strlen(http_head));
+
             bind_flag = 1;
             led_state = 5;
             os_timer_disarm(&http_temer_10s);
@@ -886,8 +887,8 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             char *not_match="账号密码不匹配";
             os_memcpy(http_head+979,not_match,14);
             os_printf("http_head = %s\n",http_head);
-//            os_memcpy(,,);
-            espconn_send(&respond_espconn,http_head,os_strlen(http_head));
+            espconn_send(&tcpserver,http_head,os_strlen(http_head));
+
         }else
 
         {
@@ -940,7 +941,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 //            os_printf("parameter_timestamp %s\n",parameter_timestamp);
         }
 
-        if(at_state == NONE && bind_flag == 1 && sniffer_flag > 30)
+        if(at_state == NONE && bind_flag == 1 && sniffer_flag > 20)
         {
             probe_flag = 1;
             sniffer_flag = 0;
