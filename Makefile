@@ -63,7 +63,7 @@ else
 endif
 
 BOOT?=new
-APP?=1
+APP?=2
 SPI_SPEED?=40
 SPI_MODE?=DIO
 SPI_SIZE_MAP?=6
@@ -284,6 +284,7 @@ ifeq ($(APP), 0)
 	@$(OBJDUMP) -S $< > ../bin/eagle.S
 else
 	mkdir -p ../bin/upgrade
+	@$(RM) -r ../bin/upgrade/*.bin          ##### rm all bin, only generate target bin
 	@$(RM) -r ../bin/upgrade/$(BIN_NAME).S ../bin/upgrade/$(BIN_NAME).dump
 	@$(OBJDUMP) -x -s $< > ../bin/upgrade/$(BIN_NAME).dump
 	@$(OBJDUMP) -S $< > ../bin/upgrade/$(BIN_NAME).S
@@ -339,6 +340,7 @@ endif
 #
 
 all:	.subdirs $(OBJS) $(OLIBS) $(OIMAGES) $(OBINS) $(SPECIAL_MKTARGETS)
+
 
 # Flash size 32Mbit-C1:        1024KB+1024KB
 # boot_v1.2+.bin               0x00000
