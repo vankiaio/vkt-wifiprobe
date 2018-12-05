@@ -50,8 +50,8 @@ uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
 
 uint8_t parsing_ip[] = "IPV4:";
 
-//uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.23.146.207:1380/\",,,0,,0,,0,\"\r\n";
-uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.28.130.53:16891/\",,,0,,0,,0,\"\r\n";
+//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
 //uint8_t rev_http_create[] = "+EHTTPCREAT:0";
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
 //AT+EHTTPSEND=0,312,312,"0,1,12,"/device/sign",0,,16,"application/json",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,"rn
@@ -867,11 +867,11 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             get_tag_flag = 1;//获得任务ID标志
         }else if(os_strstr(uart_receive_at,"e8aebee5a487e5b7b2e7bb91e5ae9a"))//绑定成功
         {
-            char *success_str="设备已成功绑定";
+            char *success_str="bind success!!";
 
-            os_printf("http_head[600]%c%c%c%c%c%c%c%c\n",http_head[940],http_head[941],http_head[942],http_head[943],http_head[944],http_head[945],http_head[946],http_head[947]);
-            os_memcpy(http_head+979,success_str,14);
-            espconn_send(&tcpserver,http_head,os_strlen(http_head));
+//            os_printf("http_head[600]%c%c%c%c%c%c%c%c\n",http_head[940],http_head[941],http_head[942],http_head[943],http_head[944],http_head[945],http_head[946],http_head[947]);
+            os_memcpy(http_answer+3,success_str,14);
+//            espconn_send(&tcpserver,http_head,os_strlen(http_head));
 
             bind_flag = 1;
             led_state = 5;
@@ -884,10 +884,10 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             return;
         }else if(os_strstr(uart_receive_at,"e8b4a6e58fb7e5af86e7a081e4b88de58cb9e9858d"))//账号密码不匹配
         {
-            char *not_match="账号密码不匹配";
-            os_memcpy(http_head+979,not_match,14);
-            os_printf("http_head = %s\n",http_head);
-            espconn_send(&tcpserver,http_head,os_strlen(http_head));
+            char *not_match="bind fail  !!!";
+            os_memcpy(http_answer+3,not_match,14);
+            os_printf("http_head = %s\n",http_answer);
+//            espconn_send(&tcpserver,http_head,os_strlen(http_head));
 
         }else
 

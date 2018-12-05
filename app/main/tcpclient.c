@@ -27,6 +27,7 @@ uint8_t http_head[] = {
    "<!DOCTYPE html>"\
    "<html>"\
    "<head>"\
+   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=gbk\">"\
    "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">"\
    "<meta name=\"viewport\" content=\"width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;\">"\
    "<meta name=\"renderer\" content=\"webkit|ie-comp|ie-stand\">"\
@@ -42,14 +43,61 @@ uint8_t http_head[] = {
    "</style>"\
    "<body>"\
    "<form action=\"\" method=\"post\">"\
-   "<input type=\"text\" name=\"loginName\" value=\"\" placeholder=\"请输入您的用户名\"><br/>"\
-   "<input type=\"password\" name=\"loginPwd\" value=\"\" placeholder=\"请输入您的密码\"><br/>"\
-   "<button id=\"loginbtn\" type=\"submit\" class=\"positive\" name=\"submit\" >绑定</button>"\
-   "<p>                    </p>"\
+   "<input type=\"text\" id=\"loginName\"  placeholder=\"请输入您的用户名\"><br/>"\
+   "<input type=\"password\" id=\"loginPwd\"  placeholder=\"请输入您的密码\"><br/>"\
+   "<button type=\"button\" id=\"loginbtn\" >绑定</button>"
+   "<div id='tip'>                    </div>"\
    "</form>"\
+   "<script language=\"javascript\">"\
+   "var loginName = document.getElementById('loginName');"\
+   "var loginPwd = document.getElementById('loginPwd');"\
+   "var i = 0;"\
+   "function reset() {"\
+   "    var xhr = new XMLHttpRequest();"\
+   "    xhr.open('GET', 'http://192.168.4.1/getAnswer', true);"\
+   "    xhr.send();"\
+   "    xhr.onreadystatechange = function() {"\
+   "        if (xhr.status == 200) {"\
+   "            if((xhr.responseText!=null)&&(xhr.responseText!='')&&(xhr.responseText!='<p>answer</p >')){"\
+   "                         i=1;"\
+   "                         var tip = document.getElementById('tip');"\
+   "                         tip.innerHTML=xhr.responseText;"\
+   "                      }"\
+   "        }"\
+   "    };"\
+   "}"\
+   "function resetTime() {"\
+   "    var xhr = new XMLHttpRequest();"\
+   "    xhr.open('POST', 'http://192.168.4.1', true);"\
+   "    xhr.send('loginName=' + loginName.value + '&loginPwd=' + loginPwd.value+\"&submit=\");"\
+   "    xhr.onreadystatechange = function() {"\
+   "        if (xhr.status == 200) {"\
+   "            setTimeout(function () {"\
+   "                if(i==0){"\
+   "                    reset();"\
+   "                }"\
+   "            }, 10000);"\
+   "        }"\
+   "    };"\
+   "}"\
+   "var oDiv = document.getElementById('loginbtn');"\
+   "oDiv.onclick = function() {"\
+   "    resetTime();}"\
+   "</script>"\
    "</body>"\
    "</html>"\
+   ""
    };//718
+
+
+   uint8_t http_answer[] = {
+                            "<p>answer              </p>"
+   };//718
+
+//   "<button id=\"loginbtn\" type=\"submit\" class=\"positive\" name=\"submit\" >绑定</button>"\
+
+
+
 //"<script language=\"javascript\">"\
 //"var myTime = setTimeout(\"Timeout()\", 10000);"\
 //"function resetTime(){clearTimeout(myTime);"\
@@ -116,7 +164,7 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
     uint8_t i,name_len = 0, pwd_len = 0;
 
     struct espconn *pespconn = (struct espconn *)arg;
-    os_printf("\r\n接收函数,%s",pdata);
+    os_printf("\r\n接收函数,%s\n",pdata);
 
     http_flg = strstr(pdata,"loginName");
 
@@ -143,17 +191,24 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
         if(0!=os_strcmp(loginName,"") || 0!=os_strcmp(loginPwd,"")) {
             os_memcpy(&tcpserver,pespconn,sizeof(pespconn));
 
-            char *honld_on="验证中请稍后..";
-            os_memcpy(http_head+979,honld_on,14);
-            connet_flag = 1;
-            espconn_send(&tcpserver,http_head,sizeof(http_head));
+//            char *honld_on="验证中请稍后..";
+//            os_memcpy(http_head+979,honld_on,14);
+            connet_flag = 0;
+//            espconn_send(&tcpserver,http_head,sizeof(http_head));
             update_post_bind();
         }
 
     } else {
-        http_flg = strstr(pdata,"HTTP");
+        http_flg = strstr(pdata,"getAnswer");
+
         if(http_flg != NULL){
-            espconn_send(pespconn,http_head,sizeof(http_head));
+            os_printf("发现 getAnswer\n");
+
+            espconn_send(pespconn,http_answer,sizeof(http_answer));
+        }else {
+
+                espconn_send(pespconn,http_head,sizeof(http_head));
+
         }
     }
 
