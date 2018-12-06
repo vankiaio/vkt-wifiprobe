@@ -45,12 +45,11 @@ uint8_t at[] = "AT\r\n";
 uint8_t read_adc[] = "AT+ZADC?\r\n";
 uint8_t at_cfun[] = "AT+CFUN=0\r\n";
 uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
-
-
+//uint8_t rx_fifo[550];
 
 uint8_t parsing_ip[] = "IPV4:";
 
-uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.28.130.53:16891/\",,,0,,0,,0,\"\r\n";
+uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.23.146.207:1380/\",,,0,,0,,0,\"\r\n";
 //uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
 //uint8_t rev_http_create[] = "+EHTTPCREAT:0";
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
@@ -117,8 +116,8 @@ LOCAL os_timer_t devicexx_app_smart_timer;
 LOCAL devicexx_app_state_t devicexx_app_state = devicexx_app_state_normal;
 LOCAL uint8_t smart_effect = 0;
 
-uint8_t uart_receive_at[512];
-
+uint8_t uart_receive_at[550];
+uint8_t uart_fifo_flag = 0;
 
 
 
@@ -582,9 +581,10 @@ void ICACHE_FLASH_ATTR
 uart_receive(const uint8_t * pdata, uint16_t length)
 {
     os_timer_disarm(&temer_10s);
+
 //    os_timer_arm(&temer_10s, 20000, 1);//20s后没有收到数据，重启
 
-	os_printf("------------UART Data received ---------------\n");
+	os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
 	uint8_t end[1] = {'\0'};
 	os_memcpy(pdata+length,end,1);
 
@@ -595,12 +595,12 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 //	}
 	os_printf("rev_len %d :%s \r\n",length, pdata);
 	os_printf("----------------------------------------------\n");
-	espconn_sent(&tcpserver, uart_receive_at, length);
 
-	// Send back what received
+
+    // Send back what received
 //	uart_send(pdata, length);
-	os_memset(uart_receive_at,'\0',sizeof(char)*512);
-	os_memcpy(uart_receive_at,pdata,length);
+    os_memset(uart_receive_at,'\0',sizeof(char)*512);
+    os_memcpy(uart_receive_at,pdata,length);
 
 
     if(os_strstr(uart_receive_at,"+IP:"))
@@ -614,24 +614,23 @@ uart_receive(const uint8_t * pdata, uint16_t length)
     }
 
 
-
-	if(os_strstr(uart_receive_at,"+EHTTPCREAT:"))
-	{
-	    creat_flag = 1;
+    if(os_strstr(uart_receive_at,"+EHTTPCREAT:"))
+    {
+        creat_flag = 1;
 //        http_send0[25] = uart_receive_at[81];
 //        http_con[12] = uart_receive_at[81];
-	    if(uart_receive_at[81] == 1)
-	    {
-	        queue_uart_send(http_destroy,os_strlen(http_destroy));
-	        os_printf("send %s\n",http_destroy);
-	        at_state = HTTP_DESTROY;
-	    }
+        if(uart_receive_at[81] == 1)
+        {
+            queue_uart_send(http_destroy,os_strlen(http_destroy));
+            os_printf("send %s\n",http_destroy);
+            at_state = HTTP_DESTROY;
+        }
         os_memset(uart_receive_at,'\0',sizeof(char)*512);
         queue_uart_send(http_con,os_strlen(http_con));
         os_printf("send %s\n",http_con);
 
         at_state = HTTP_CON;
-	}
+    }
 
     if(os_strstr(uart_receive_at,"+EHTTPERR:0,-2"))
     {
@@ -867,11 +866,8 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             get_tag_flag = 1;//获得任务ID标志
         }else if(os_strstr(uart_receive_at,"e8aebee5a487e5b7b2e7bb91e5ae9a"))//绑定成功
         {
-            char *success_str="bind success!!";
-
-//            os_printf("http_head[600]%c%c%c%c%c%c%c%c\n",http_head[940],http_head[941],http_head[942],http_head[943],http_head[944],http_head[945],http_head[946],http_head[947]);
-            os_memcpy(http_answer+3,success_str,14);
-//            espconn_send(&tcpserver,http_head,os_strlen(http_head));
+            char *binded="设备已绑定,请先解绑";
+            os_memcpy(http_answer+206,binded,19);
 
             bind_flag = 1;
             led_state = 5;
@@ -884,11 +880,14 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             return;
         }else if(os_strstr(uart_receive_at,"e8b4a6e58fb7e5af86e7a081e4b88de58cb9e9858d"))//账号密码不匹配
         {
-            char *not_match="bind fail  !!!";
-            os_memcpy(http_answer+3,not_match,14);
+            char *not_match="账号密码不匹配";
+            os_memcpy(http_answer+206,not_match,14);
             os_printf("http_head = %s\n",http_answer);
-//            espconn_send(&tcpserver,http_head,os_strlen(http_head));
-
+        }else if(os_strstr(uart_receive_at,"e8b4a6e58fb7e5af86e7a081e4b88de58cb9e9858d"))//账号密码不匹配
+        {
+            char *bind_success="设备绑定成功";
+            os_memcpy(http_answer+206,bind_success,12);
+            os_printf("http_head = %s\n",http_answer);
         }else
 
         {
@@ -960,7 +959,9 @@ uart_receive(const uint8_t * pdata, uint16_t length)
         return;
     }
 
-	os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
+    os_memset(uart_receive_at,'\0',sizeof(char)*550);
+    os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
+
 }
 
 void ICACHE_FLASH_ATTR

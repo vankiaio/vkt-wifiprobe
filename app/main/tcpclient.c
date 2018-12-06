@@ -46,7 +46,7 @@ uint8_t http_head[] = {
    "<input type=\"text\" id=\"loginName\"  placeholder=\"请输入您的用户名\"><br/>"\
    "<input type=\"password\" id=\"loginPwd\"  placeholder=\"请输入您的密码\"><br/>"\
    "<button type=\"button\" id=\"loginbtn\" >绑定</button>"
-   "<div id='tip'>                    </div>"\
+   "<div id='tip'>                     </div>"\
    "</form>"\
    "<script language=\"javascript\">"\
    "var loginName = document.getElementById('loginName');"\
@@ -58,7 +58,7 @@ uint8_t http_head[] = {
    "    xhr.send();"\
    "    xhr.onreadystatechange = function() {"\
    "        if (xhr.status == 200) {"\
-   "            if((xhr.responseText!=null)&&(xhr.responseText!='')&&(xhr.responseText!='<p>answer</p >')){"\
+   "            if((xhr.responseText!=null)&&(xhr.responseText!='')&&!(xhr.responseText.indexOf('answer')>=0)){"\
    "                         i=1;"\
    "                         var tip = document.getElementById('tip');"\
    "                         tip.innerHTML=xhr.responseText;"\
@@ -72,54 +72,63 @@ uint8_t http_head[] = {
    "    xhr.send('loginName=' + loginName.value + '&loginPwd=' + loginPwd.value+\"&submit=\");"\
    "    xhr.onreadystatechange = function() {"\
    "        if (xhr.status == 200) {"\
-   "            setTimeout(function () {"\
+   "            setInterval(function () {"\
    "                if(i==0){"\
    "                    reset();"\
    "                }"\
-   "            }, 10000);"\
+   "            }, 800);"\
    "        }"\
    "    };"\
    "}"\
    "var oDiv = document.getElementById('loginbtn');"\
    "oDiv.onclick = function() {"\
+   "    i = 0;"\
+   "    var tip = document.getElementById('tip');"\
+   "    tip.innerHTML='<p>验证中请稍后</p>';"\
    "    resetTime();}"\
    "</script>"\
    "</body>"\
    "</html>"\
    ""
-   };//718
+};
 
 
-   uint8_t http_answer[] = {
-                            "<p>answer              </p>"
-   };//718
+uint8_t http_answer[] = {
+    "HTTP/1.0 200 OK\r\n"\
+    "Content-Type: text/html;charset=gbk\r\n"\
+    "Cache-Control: private\r\n"\
+    "Connection: close\r\n"\
+    "\r\n"\
+    "<!DOCTYPE html>"\
+    "<html>"\
+    "<head>"\
+    "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=gbk\">"\
+    "</head>"\
+    "<body>"\
+    "<p>answer             </p>"\
+    "</body>"\
+    "</html>"\
+};
 
-//   "<button id=\"loginbtn\" type=\"submit\" class=\"positive\" name=\"submit\" >绑定</button>"\
+uint8_t http_response[] = {
+    "HTTP/1.0 200 OK\r\n"\
+    "Content-Type: text/html;charset=gbk\r\n"\
+    "Cache-Control: private\r\n"\
+    "Connection: close\r\n"\
+};
 
 
-
-//"<script language=\"javascript\">"\
-//"var myTime = setTimeout(\"Timeout()\", 10000);"\
-//"function resetTime(){clearTimeout(myTime);"\
-//"myTime = setTimeout('Timeout()', 10000); }"\
-//"function Timeout() {"\
-//"window.location.reload();}"\
-//"document.documentElement.onkeydown=resetTime;"\
-//"document.documentElement.onmousemove=resetTime;"\
-//"var oDiv = document.getElementById('loginbtn');"\
-//"oDiv.onclick = function(){resetTime;}"\
-//"</script>"\
-//http 服务器
 struct espconn tcpserver;
 uint8_t http_data[] = {
-        "HTTP/1.1 200 OK\r\n"\
-        "Content-Type:text/plain;charset=UTF-8\r\n"\
-        "Content-Disposition:attachment;filename=1.txt\r\n"\
-        "\r\n"\
-        "get data"\
-        "\r\n"};
+    "HTTP/1.1 200 OK\r\n"\
+    "Content-Type:text/plain;charset=UTF-8\r\n"\
+    "Content-Disposition:attachment;filename=1.txt\r\n"\
+    "\r\n"\
+    "get data"\
+    "\r\n"
+};
 
-//http 服务器
+
 void ICACHE_FLASH_ATTR
 tcpserver_recon_cb(void *arg, sint8 errType)//异常断开回调
 {
@@ -127,7 +136,7 @@ tcpserver_recon_cb(void *arg, sint8 errType)//异常断开回调
     os_printf("\r\n异常断开");
 }
 
-//http 服务器
+
 void ICACHE_FLASH_ATTR
 tcpserver_discon_cb(void *arg)//正常断开回调
 {
@@ -135,7 +144,7 @@ tcpserver_discon_cb(void *arg)//正常断开回调
     os_printf("\r\n正常断开");
 }
 
-//http 服务器
+
 void ICACHE_FLASH_ATTR
 tcpclient_sent_cb(void *arg)//发送回调
 {
@@ -150,7 +159,8 @@ tcpclient_sent_cb(void *arg)//发送回调
     os_printf("\r\n发送回调");
 }
 
-//http 服务器
+
+
 void ICACHE_FLASH_ATTR
 tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
 {
@@ -187,15 +197,10 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
         loginPwd[pwd_len] = '\0';
         os_printf("\n%s    %s\n",loginName,loginPwd);
 
-
         if(0!=os_strcmp(loginName,"") || 0!=os_strcmp(loginPwd,"")) {
-            os_memcpy(&tcpserver,pespconn,sizeof(pespconn));
-
-//            char *honld_on="验证中请稍后..";
-//            os_memcpy(http_head+979,honld_on,14);
             connet_flag = 0;
-//            espconn_send(&tcpserver,http_head,sizeof(http_head));
             update_post_bind();
+            espconn_send(pespconn,http_response,sizeof(http_response));
         }
 
     } else {
@@ -203,8 +208,13 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
 
         if(http_flg != NULL){
             os_printf("发现 getAnswer\n");
+            char *default_str="answer        ";
 
             espconn_send(pespconn,http_answer,sizeof(http_answer));
+
+            os_memcpy(http_answer+206,default_str,14);
+
+
         }else {
 
                 espconn_send(pespconn,http_head,sizeof(http_head));
@@ -215,7 +225,7 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
 
 }
 
-//http 服务器
+
 void ICACHE_FLASH_ATTR
 tcpserver_listen(void *arg)//服务器被链接回调
 {
@@ -227,7 +237,7 @@ tcpserver_listen(void *arg)//服务器被链接回调
     espconn_regist_sentcb(pespconn, tcpclient_sent_cb);//开启发送成功回调
 }
 
-//http 服务器
+
 void ICACHE_FLASH_ATTR
 tcp_server(void)//开启tcp服务器
 {
