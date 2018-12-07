@@ -76,7 +76,7 @@ uint8_t http_head[] = {
    "                if(i==0){"\
    "                    reset();"\
    "                }"\
-   "            }, 800);"\
+   "            }, 2000);"\
    "        }"\
    "    };"\
    "}"\
@@ -253,6 +253,7 @@ tcp_server(void)//¿ªÆôtcp·þÎñÆ÷
 
 
     os_printf("Hello Esp8266!\r\n");
+
 }
 
 

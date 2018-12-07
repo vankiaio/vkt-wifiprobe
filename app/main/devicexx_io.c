@@ -26,7 +26,7 @@
 struct keys_param keys;
 LOCAL struct single_key_param *single_key[KEY_COUNT];
 
-LOCAL os_timer_t devicexx_io_led_timer;
+os_timer_t devicexx_io_led_timer;
 
 LOCAL uint8_t relay_state = 0;
 uint8_t led_state = 0;
@@ -38,7 +38,7 @@ static uint8_t state = 0;
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-LOCAL void ICACHE_FLASH_ATTR
+void ICACHE_FLASH_ATTR
 devicexx_io_led_timer_tick()
 {
 
@@ -171,11 +171,11 @@ devicexx_key_medium_press(bool key_up)
     if (key_up)
     {
         VOWSTAR_IO_DEBUG("Key medium_pressed\r\n");
-        bind_flag = 0;
-        at_state = NONE;
-        wifi_set_opmode(SOFTAP_MODE);
-        vowstar_set_ssid_prefix("Vankia_WP_");
-        tcp_server();
+//        bind_flag = 0;
+//        at_state = NONE;
+//        wifi_set_opmode(SOFTAP_MODE);
+//        vowstar_set_ssid_prefix("Vankia_WP_");
+//        tcp_server();
     }
     else
     {

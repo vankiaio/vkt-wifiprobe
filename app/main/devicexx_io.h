@@ -24,6 +24,7 @@
 #endif
 
 extern uint8_t led_state;
+extern os_timer_t devicexx_io_led_timer;
 
 extern struct keys_param keys;
 void vowstar_io_init(void);
@@ -31,5 +32,5 @@ uint8_t vowstar_io_get_relay_state(void);
 void vowstar_io_set_relay_state(uint8_t state);
 uint8_t vowstar_io_get_led_state(void);
 void vowstar_io_set_led_state(uint8_t state);
-
+void devicexx_io_led_timer_tick();
 #endif /* __VOWSTAR_IO_H__ */
