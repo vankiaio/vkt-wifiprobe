@@ -81,7 +81,7 @@ uart_config(uint8 uart_no)
     if (uart_no == UART0) {
         //set rx fifo trigger
         WRITE_PERI_REG(UART_CONF1(uart_no),//100&
-                       ((256 & UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S) |
+                       ((100 & UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S) |
 #if UART_HW_RTS
                        ((110 & UART_RX_FLOW_THRHD) << UART_RX_FLOW_THRHD_S) |
                        UART_RX_FLOW_EN |   //enbale rx flow control
