@@ -48,8 +48,8 @@ uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
 
 uint8_t parsing_ip[] = "IPV4:";
 
-uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.23.146.207:1380/\",,,0,,0,,0,\"\r\n";
-//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+//uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.23.146.207:1380/\",,,0,,0,,0,\"\r\n";
+uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
 //uint8_t rev_http_create[] = "+EHTTPCREAT:0";
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
 //AT+EHTTPSEND=0,312,312,"0,1,12,"/device/sign",0,,16,"application/json",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,"rn
@@ -599,26 +599,29 @@ uart_receive(const uint8_t * pdata, uint16_t length)
     os_timer_disarm(&temer_10s);
 //    os_timer_arm(&temer_10s, 20000, 1);//20s后没有收到数据，重启
 
-//	os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
-//	uint8_t end[1] = {'\0'};
-//	os_memcpy(pdata+length,end,1);
-//
-//	os_printf("rev_len %d :%s \r\n",length, pdata);
-//	os_printf("----------------------------------------------\n");
+	os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
+	uint8_t end[1] = {'\0'};
+	os_memcpy(pdata+length,end,1);
 
+	os_printf("rev_len %d :%s \r\n",length, pdata);
+	os_printf("----------------------------------------------\n");
+    os_memset(uart_receive_at,'\0',sizeof(char)*512);
+    os_memcpy(uart_receive_at,pdata,length);
 
-	if(length == 100)
-	{
-	    if(uart_fifo_flag==0)
-	        os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
-	    os_printf("rev_len %d :%s \r\n",length, pdata);
-	    os_memcpy(uart_receive_at+(uart_fifo_flag*100),pdata,100);
-	    uart_fifo_flag++;
-	}else{
-	    os_memcpy(uart_receive_at+(uart_fifo_flag*100),pdata,length);
-	    os_printf("rev_len %d :%s \r\n",uart_fifo_flag*100+length, uart_receive_at);
-	    os_printf("----------------------------------------------\n");
-	    uart_fifo_flag = 0;
+//	if(length == 100)
+//	{
+//	    if(uart_fifo_flag==0)
+//	        os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
+//	    os_printf("rev_len %d :%s \r\n",length, pdata);
+//	    os_memcpy(uart_receive_at+(uart_fifo_flag*100),pdata,100);
+//	    uart_fifo_flag++;
+//	}else
+    {
+//	    os_memcpy(uart_receive_at+(uart_fifo_flag*100),pdata,length);
+//	    os_printf("rev_len %d :%s \r\n",uart_fifo_flag*100+length, uart_receive_at);
+//	    os_printf("----------------------------------------------\n");
+//	    uart_fifo_flag = 0;
+
         // Send back what received
     //	uart_send(pdata, length);
 //        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
@@ -675,20 +678,20 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 break;
 
             case HTTP_CON:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_discon,os_strlen(http_discon));
-                os_printf("discon %s\n",http_discon);
-                at_state = HTTP_DISCON;
-                break;
-
-            case HTTP_DISCON:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_con,os_strlen(http_con));
-                os_printf("send %s\n",http_con);
-                at_state = HTTP_DESTROY;
-                break;
-
-            case HTTP_DESTROY:
+//                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//                queue_uart_send(http_discon,os_strlen(http_discon));
+//                os_printf("discon %s\n",http_discon);
+//                at_state = HTTP_DISCON;
+//                break;
+//
+//            case HTTP_DISCON:
+//                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//                queue_uart_send(http_con,os_strlen(http_con));
+//                os_printf("send %s\n",http_con);
+//                at_state = HTTP_DESTROY;
+//                break;
+//
+//            case HTTP_DESTROY:
                 os_memset(uart_receive_at,'\0',sizeof(char)*2048);
                 queue_uart_send(http_destroy,os_strlen(http_destroy));
                 os_printf("send %s\n",http_destroy);
