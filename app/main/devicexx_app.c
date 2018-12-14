@@ -32,14 +32,17 @@ os_timer_t temer_10s;
 
 
 
-
-
 #define VOWSTAR_WAN_DEBUG(format, ...) os_printf(format, ##__VA_ARGS__)
+
+uint8_t ap_ssid[32] = "Yajiehui3";
+uint8_t  ap_pwd[32] = "yajiehui2016188";
+uint8_t  url[128];
 
 uint8_t *loginName = "12345678901234567890123456789012";
 uint8_t *loginPwd  = "98765432109876543210987654321098";
 
 
+uint8_t ipr[] = "AT+IPR=<115200>\r\n";
 uint8_t at[] = "AT\r\n";
 uint8_t read_adc[] = "AT+ZADC?\r\n";
 uint8_t at_cfun[] = "AT+CFUN=0\r\n";
@@ -49,14 +52,15 @@ uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
 uint8_t parsing_ip[] = "IPV4:";
 
 //uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.23.146.207:1380/\",,,0,,0,,0,\"\r\n";
-uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8099/\",,,0,,0,,0,\"\r\n";
 //uint8_t rev_http_create[] = "+EHTTPCREAT:0";
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
-//AT+EHTTPSEND=0,312,312,"0,1,12,"/device/sign",0,,16,"application/json",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,"rn
-uint8_t http_post_bind [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,\"\r\n";
-//AT+EHTTPSEND=0,312,312,"0,1,12,"/device/sign",0,,16,"application/json",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,"
 
-uint8_t http_get_tag [] = "AT+EHTTPSEND=0,73,73,\"0,0,54,\"/MacGather/submitValue?deviceId=7ARjo4q3acNeWTGF3mRWsX\",0,,0,,0,,\"\r\n";
+uint8_t http_post_bind [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,\"\r\n";
+
+
+uint8_t http_get_tag [] = "AT+EHTTPSEND=0,118,118,\"0,0,99,\"/MacGather/submitValue?deviceId=7ARjo4q3acNeWTGF3mRWsX&version=0.000&lng=11618.03708&lat=3958.98966\",0,,0,,0,,\"\r\n";
+//AT+EHTTPSEND=0,118,118,"0,0,99,"/MacGather/submitValue?deviceId=7ARjo4q3acNeWTGF3mRWsX&version=0.000&lng=00000.00000&lat=0000.00000",0,,0,,0,,"
 
 uint8_t http_send0 [] = "AT+EHTTPSEND=1,2961,436,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2899,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C2274696D657374616D70223A2231382F31312F30312C31383A35343A3135222C22636f6c6c6563744964223A223132353830222C226C6F6E676974756465223A223131362E333133323838222C226C61746974756465223A2233392E393930373631222C226D61635F737472223A223031303035453746464646412C3031303035453030303046432C4343423841383035363438342C\"\r\n";
 uint8_t http_send1[] = "AT+EHTTPSEND=1,2961,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
@@ -72,7 +76,7 @@ uint8_t http_destroy[] = "AT+EHTTPDESTROY=1\r\n";
 uint8_t probe_flag = 0;
 uint8_t creat_flag = 0;
 uint8_t send_flag = 0;
-uint8_t sniffer_flag = 0;
+uint16_t sniffer_flag = 0;
 at_state_t at_state = 0;
 uint16_t z_adc = 0;
 uint8_t shut_down_flag = 0;
@@ -93,9 +97,9 @@ uint8_t *parameter_timestamp = "111111111111";//都为0会与tag重叠
 //                              18/11/01,18:54:15
 uint8_t *parameter_tag = "00000000";
 uint8_t *parameter_longitude = "00000.00000";
-//                               116.313288
+//                              11618.03708
 uint8_t *parameter_latitude = "0000.00000";
-//                              39.990761
+//                             3958.98966
 #define JSON_DEVICE_MAC "{\"deviceId\":\"%s\",\"timestamp\":\"%s\",\"collectId\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\",\"mac_str\":\"%s\"}"
 
 #define JSON_POST_BIND  "{\"deviceId\":\"%s\",\"loginName\":\"%s\",\"loginPwd\":\"%s\"}"
@@ -103,12 +107,8 @@ uint8_t *parameter_latitude = "0000.00000";
 
 
 LOCAL system_status_t local_system_status = {
-	.init_flag = 0,
-	.start_count = 0,
-	.start_continue = 0,
-	.mcu_status = {
-
-	},
+	.version_type = 0,
+	.version_num = 0,
 };
 
 LOCAL os_timer_t devicexx_app_smart_timer;
@@ -117,7 +117,6 @@ LOCAL uint8_t smart_effect = 0;
 
 uint8_t uart_receive_at[2048];
 uint8_t uart_fifo_flag = 0;
-
 
 
 void ICACHE_FLASH_ATTR
@@ -392,187 +391,6 @@ nbiot_http_post()
 }
 
 
-
-
-//#if 0
-//#define VOWSTAR_DEVICE_JSON_HEADER              "Content-Type:application/json\r\n"
-//#define JSON_DEVICE_MAC             "{\"timestamp\":\"%s\",\"deviceId\":\"%s\",\"mac\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\"}"
-//
-//uint8_t timestamp[sizeof("18446744073709551616")];
-//uint8_t *parameter_temp = "20.00";
-//uint8_t *parameter_hum = "50.00";
-//uint8_t *parameter_deviceId = "7ARjo4q3acNeWTGF3mRWsX";
-//
-//uint8_t * parameter_longitude = "116.313288";
-//uint8_t * parameter_latitude = "39.990761";
-//
-//
-//void ICACHE_FLASH_ATTR
-//dxx_http_request(const uint8_t * timestamp, const char * body, http_callback_t callback)
-//{
-//    os_printf("%s  called\n", __func__);
-//    // Check parameter
-//    if (NULL == timestamp || NULL == body || 0 == os_strlen(timestamp) || 0 == os_strlen(body)) {
-//        return;
-//    }
-//
-//    // Parse Body's JSON string to JSON object
-//    cJSON * json = cJSON_Parse(body);
-//    if (NULL == json) {
-//        VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-//        return;
-//    }
-//
-//    uint8_t * url = NULL;
-//        // Build URL
-//        url = "http://hum.devicexx.com:80/humitureFast/submitValue";
-//        if (NULL != url) {
-//            void * ctx = NULL;
-//            // Perform a post
-//            os_printf("next http_post--------------------\n");
-//            http_post(ctx, url, VOWSTAR_DEVICE_JSON_HEADER, (const char *) body, os_strlen(body), callback);
-//
-//            VOWSTAR_WAN_DEBUG("%s: url %s\n", __func__, url);
-//            VOWSTAR_WAN_DEBUG("%s: body %s\n", __func__, body);
-//        } else {
-//            VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-//        }
-//
-//
-//    // Free memory
-//    if (url)
-//        os_free(url);
-//    if (json)
-//        cJSON_Delete(json);
-//}
-//
-//ICACHE_FLASH_ATTR
-//int dxx_message_check_json_object(const char * in,  size_t in_len)
-//{
-//    int result = -1;
-//    /* Check parameters, Json object at least 2 bytes */
-//    if (NULL == in || 2 > in_len)
-//        return -1;
-//    /* Check Json data */
-//    if ('{' == in[0]) {
-//        // Parse root data
-//        cJSON * json_root = cJSON_Parse(in);
-//        // Check json root
-//        if ((NULL != json_root) && (cJSON_Object == json_root->type)) {
-//            /* It is Json object data */
-//            result = 0;
-//        }
-//        /* Free memory */
-//        cJSON_Delete(json_root);
-//    };
-//    return result;
-//}
-//
-//int ICACHE_FLASH_ATTR
-//dxx_http_process(char * body, size_t body_len)
-//{
-////  if ((NULL != body) && (0 != body_len)) {
-//        VOWSTAR_WAN_DEBUG("%s: body size:%d\r\n", __func__, body);
-//
-//        if (0 == dxx_message_check_json_object(body, body_len)) {
-////      dxx_message_ckeck_json_object(body, body_len);
-//            body[body_len] = '\0';
-//            VOWSTAR_WAN_DEBUG("%s: body:\r\n", __func__);
-//            VOWSTAR_WAN_DEBUG("%s\r\n", body);
-//            return 0;
-//        }
-////  }
-//}
-//
-///******************************************************************************
-// * FunctionName : vowstar_wan_device_ota_callback
-// * Description  : call back function of http request
-// * Parameters   : char * response -- http response from server
-// *              : int http_status -- http status code from server
-// *              : char * full_response -- full response from server
-// * Returns      : none
-// *******************************************************************************/
-//void ICACHE_FLASH_ATTR
-//device_post_callback(void * ctx, char * response_body, size_t response_body_size, int http_status, char * response_headers)
-//{
-////  os_printf("%s: status:%d\n", __func__, http_status);
-//    if (200 == http_status) {
-//        dxx_http_process(response_body, response_body_size);
-//    }
-//}
-//
-//void ICACHE_FLASH_ATTR
-//devicexx_sntp_init(void)
-//{
-//    sntp_setservername(0,"0.cn.pool.ntp.org");
-//    sntp_setservername(1,"1.cn.pool.ntp.org");
-//    sntp_setservername(2,"cn.pool.ntp.org");
-//    sntp_init();
-//    uint32_t time = sntp_get_current_timestamp();
-//    os_printf("time is :%d\r\n",time);
-//}
-//
-//uint8_t * ICACHE_FLASH_ATTR
-//get_timestamp( void ) {
-//    os_sprintf(timestamp, "%ld", sntp_get_current_timestamp());
-//    return timestamp;
-//}
-//
-///******************************************************************************
-// * FunctionName : vowstar_wan_device_ota
-// * Description  : get ota info from cloud
-// * Parameters   : none
-// * Returns      : none
-// *******************************************************************************/
-//void ICACHE_FLASH_ATTR
-//update_data()
-//{
-//    VOWSTAR_WAN_DEBUG("%s: request\r\n", __func__);
-//
-//
-//
-//    // Update timestamp
-//    uint8_t * parameter_timestamp = get_timestamp();
-//
-//    // Get parameters
-//
-////  uint8_t * parameter_deviceId    = devicexx_get_device_id();
-//
-//
-//
-//
-//    // Build Body's JSON string
-//    uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_DEVICE_MAC) +
-//                                           os_strlen(parameter_deviceId) +
-//                                           os_strlen(parameter_temp) +
-//                                           os_strlen(parameter_hum) +
-//                                           os_strlen(parameter_longitude) +
-//                                           os_strlen(parameter_latitude));
-//
-//
-//    if (body == NULL) {
-//        VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-//        return;
-//    }
-//
-//    os_sprintf(body,
-//               JSON_DEVICE_MAC,
-//               parameter_deviceId,
-//               parameter_temp,
-//               parameter_hum,
-//               parameter_longitude,
-//               parameter_latitude);
-//
-//    // Perform a Device++ request
-//    dxx_http_request(parameter_timestamp, body, device_post_callback);
-//
-//    // Free memory
-//    if (body)
-//        os_free(body);
-//}
-//
-//#endif
-
 void ICACHE_FLASH_ATTR
 uart_send(const uint8_t * buffer, uint16_t length)
 {
@@ -591,13 +409,34 @@ uart_send(const uint8_t * buffer, uint16_t length)
 	os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
 }
 
+int ICACHE_FLASH_ATTR
+dxx_http_process(char * body, size_t body_len)
+{
+//	if ((NULL != body) && (0 != body_len)) {
+		VOWSTAR_WAN_DEBUG("%s: body size:%d\r\n", __func__, body);
+
+//		if (0 == dxx_message_ckeck_json_object(body, body_len)) {
+		dxx_message_ckeck_json_object(body, body_len);
+			body[body_len] = '\0';
+			VOWSTAR_WAN_DEBUG("%s: body:\r\n", __func__);
+			VOWSTAR_WAN_DEBUG("%s\r\n", body);
+			return 0;
+//		}
+//	}
+}
+//void ICACHE_FLASH_ATTR
+//device_ota_callback(void * ctx, char * response_body, size_t response_body_size, int http_status, char * response_headers)
+//{
+//	os_printf("%s: status:%d\n", __func__, http_status);
+//	if (200 == http_status) {
+//		dxx_http_process(response_body, response_body_size);
+//	}
+//}
 
 
 void ICACHE_FLASH_ATTR
 uart_receive(const uint8_t * pdata, uint16_t length)
 {
-    os_timer_disarm(&temer_10s);
-//    os_timer_arm(&temer_10s, 20000, 1);//20s后没有收到数据，重启
 
 	os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
 	uint8_t end[1] = {'\0'};
@@ -729,7 +568,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                                 mac_address_str[i] +=55;
                         }
                         os_memcpy(parameter_deviceId + 10, mac_address_str, 12);
-                        os_memcpy(http_get_tag + 62, parameter_deviceId, 22);
+                        os_memcpy(http_get_tag + 64, parameter_deviceId, 22);
                         os_printf("deviceid %s\n",parameter_deviceId);
                         create_http(0);
                     }else system_restart();
@@ -913,7 +752,57 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 sniffer_flag = 0;
 
 
-            }else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8"))//设备未使用
+            }
+             else if(os_strstr(uart_receive_at,"636f6465223a223222"))//code":"2"  升级
+            {
+                os_timer_disarm(&temer_10s);
+
+                uint8_t * version_addr = NULL;
+                uint8_t baiwei, shiwei, gewei,version_type;
+                uint16_t version_num;
+
+
+                version_addr = strstr(pdata,"76657273696f6e");//version
+                os_printf("version_type %c\n",&version_type);
+                os_memcpy(&version_type,version_addr+22,1);
+                os_printf("version_type %d\n",version_type);
+
+                os_memcpy(&baiwei,version_addr+26,1);
+                os_memcpy(&shiwei,version_addr+28,1);
+                os_memcpy(&gewei,version_addr+30,1);
+
+                os_printf("baiwei %d shiwei %d gewei %d\n",baiwei,shiwei,gewei);
+
+
+
+
+                version_num = baiwei*100+shiwei*10+gewei;
+                os_printf("version_num %d\n",version_num);
+//                if(local_system_status.version_type == version_type && local_system_status.version_num < version_num)
+                if(1)
+                {
+//                    uint8_t ap_ssid[32], ap_pwd[32];
+                    uint8_t url_temp[128] ;
+                    uint8_t * url_addr = NULL;
+                    uint8_t * upgrade_url = NULL;
+                    uint8_t url_len, i;
+
+                    url_addr = strstr(pdata,"75726c");//url
+                    url_len = version_addr-url_addr-18;
+                    os_memcpy(url_temp,url_addr+12,url_len);
+                    url_temp[url_len] = '\0';
+
+					for(i=0;i<url_len;i++) if(url_temp[i]<58) url_temp[i]-=48; else url_temp[i]-=87;
+					for(i=0;i<url_len/2;i++) url[i] = ((url_temp[i*2] << 4) + url_temp[1+i*2]);
+
+					os_printf("url %s \n",url);
+
+					//传递ap_ssid ap_pwd
+					tcp_client_init(ap_ssid,ap_pwd);//OTA升级
+                }
+            }
+
+            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8"))//设备未使用
             {
                 bind_flag = 0;
                 at_state = WAIT;
@@ -974,6 +863,9 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 queue_uart_send(zgmode,os_strlen(zgmode));
                 os_printf("send %s\n",zgmode);
                 at_state = ZGMODE;
+
+                os_timer_disarm(&temer_10s);
+                os_timer_arm(&temer_10s, 20000, 1);//20s后没有收到数据，重启
             }
 
             return;
@@ -991,8 +883,14 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
                 os_memcpy(parameter_longitude,uart_receive_at + 32, os_strlen(parameter_longitude));
                 os_memcpy(parameter_latitude, uart_receive_at + 19 , os_strlen(parameter_latitude));
+
+                os_memcpy(http_get_tag+105, parameter_longitude, os_strlen(parameter_longitude));
+                os_memcpy(http_get_tag+121, parameter_latitude , os_strlen(parameter_latitude));
+
                 os_memcpy(parameter_timestamp, uart_receive_at + 7 , 6);
                 os_memcpy(parameter_timestamp+6, uart_receive_at + 53 ,6);
+
+
 
                 os_printf("parameter_longitude=%s\nparameter_latitude=%s\nparameter_timestamp=%s\n",parameter_longitude,parameter_latitude,parameter_timestamp);
 
@@ -1013,6 +911,11 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 sniffer_flag = 0;
                 sniffer_init();
                 sniffer_init_in_system_init_done();
+            }
+            if(sniffer_flag > 3600)
+            {
+                os_timer_disarm(&temer_10s);
+                os_timer_arm(&temer_10s, 20000, 1);//防止异常
             }
     //        else if(bind_flag == 1 && sniffer_flag > 5)
     //        {
@@ -1073,17 +976,7 @@ devicexx_app_load(void)
 	    0,
 	    (void *)(&local_system_status),
 	    sizeof(local_system_status));
-	if (local_system_status.init_flag)
-	{
-		// TODO: Do app first time init
-	}
-	else
-	{
-		local_system_status.init_flag = 1;
-	}
-	local_system_status.start_count += 1;
-	local_system_status.start_continue += 1;
-	DEVICEXX_APP_DEBUG("%s: start count:%d,start_continue:%d\r\n", __func__, local_system_status.start_count, local_system_status.start_continue);
+
 	devicexx_app_save();
 }
 
@@ -1107,93 +1000,95 @@ devicexx_app_smart_timer_tick()
 {
 
 }
+//
+//void ICACHE_FLASH_ATTR
+//devicexx_app_start_check(uint32_t system_start_seconds)
+//{
+//	if ((local_system_status.start_continue != 0) && (system_start_seconds > 5))
+//	{
+//		local_system_status.start_continue = 0;
+//		devicexx_app_save();
+//	}
+//
+//	if (local_system_status.start_continue >= 10)
+//	{
+//		if (devicexx_app_state_restore != devicexx_app_state)
+//		{
+//			DEVICEXX_APP_DEBUG("%s: system restore\r\n", __func__);
+//			devicexx_app_state = devicexx_app_state_restore;
+//			// Init flag and counter
+//			local_system_status.init_flag = 0;
+//			local_system_status.start_continue = 0;
+//			// Save param
+//			devicexx_app_save();
+//			// Restore system
+//			system_restore();
+//			// Device++ recovery
+//			devicexx_system_recovery();
+//			// Restart system
+//			system_restart();
+//		}
+//	}
+//	else if (local_system_status.start_continue >= 9)
+//	{
+//		os_timer_disarm(&devicexx_app_smart_timer);
+//		// Do something
+//	}
+//	else if (local_system_status.start_continue >= 8)
+//	{
+//		os_timer_disarm(&devicexx_app_smart_timer);
+//		// Do something
+//	}
+//	else if (local_system_status.start_continue >= 7)
+//	{
+//		os_timer_disarm(&devicexx_app_smart_timer);
+//		// Do something
+//
+//	}
+//	else if (local_system_status.start_continue >= 6)
+//	{
+//		os_timer_disarm(&devicexx_app_smart_timer);
+//		// Do something
+//	}
+//	else if (local_system_status.start_continue >= 5)
+//	{
+//		if (DEVICEXX_CONNECTED == devicexx_state())
+//		{
+//			if (devicexx_app_state_upgrade != devicexx_app_state)
+//			{
+//				DEVICEXX_APP_DEBUG("%s: OTA update\r\n", __func__);
+//				devicexx_app_state = devicexx_app_state_upgrade;
+//				devicexx_check_update();
+//			}
+//		}
+//	}
+//	else if (local_system_status.start_continue >= 3)
+//	{
+//		devicexx_force_smartlink();
+//	}
+//	if ((WIFI_SMARTLINK_START == network_current_state()) ||
+//	        (WIFI_SMARTLINK_LINKING == network_current_state()) ||
+//	        (WIFI_SMARTLINK_FINDING == network_current_state()) ||
+//	        (WIFI_SMARTLINK_GETTING == network_current_state()))
+//	{
+//		if (devicexx_app_state_smart != devicexx_app_state)
+//		{
+//			DEVICEXX_APP_DEBUG("%s: begin smart config effect\r\n", __func__);
+//			devicexx_app_state = devicexx_app_state_smart;
+//			os_timer_disarm(&devicexx_app_smart_timer);
+//			os_timer_setfn(&devicexx_app_smart_timer, (os_timer_func_t *)devicexx_app_smart_timer_tick, NULL);
+//			os_timer_arm(&devicexx_app_smart_timer, 20, 1);
+//		}
+//	}
+//	else
+//	{
+//		if (devicexx_app_state_smart == devicexx_app_state)
+//		{
+//			devicexx_app_state = devicexx_app_state_normal;
+//			devicexx_app_apply_settings();
+//			os_timer_disarm(&devicexx_app_smart_timer);
+//		}
+//	}
+//}
 
-void ICACHE_FLASH_ATTR
-devicexx_app_start_check(uint32_t system_start_seconds)
-{
-	if ((local_system_status.start_continue != 0) && (system_start_seconds > 5))
-	{
-		local_system_status.start_continue = 0;
-		devicexx_app_save();
-	}
 
-	if (local_system_status.start_continue >= 10)
-	{
-		if (devicexx_app_state_restore != devicexx_app_state)
-		{
-			DEVICEXX_APP_DEBUG("%s: system restore\r\n", __func__);
-			devicexx_app_state = devicexx_app_state_restore;
-			// Init flag and counter
-			local_system_status.init_flag = 0;
-			local_system_status.start_continue = 0;
-			// Save param
-			devicexx_app_save();
-			// Restore system
-			system_restore();
-			// Device++ recovery
-			devicexx_system_recovery();
-			// Restart system
-			system_restart();
-		}
-	}
-	else if (local_system_status.start_continue >= 9)
-	{
-		os_timer_disarm(&devicexx_app_smart_timer);
-		// Do something
-	}
-	else if (local_system_status.start_continue >= 8)
-	{
-		os_timer_disarm(&devicexx_app_smart_timer);
-		// Do something
-	}
-	else if (local_system_status.start_continue >= 7)
-	{
-		os_timer_disarm(&devicexx_app_smart_timer);
-		// Do something
-
-	}
-	else if (local_system_status.start_continue >= 6)
-	{
-		os_timer_disarm(&devicexx_app_smart_timer);
-		// Do something
-	}
-	else if (local_system_status.start_continue >= 5)
-	{
-		if (DEVICEXX_CONNECTED == devicexx_state())
-		{
-			if (devicexx_app_state_upgrade != devicexx_app_state)
-			{
-				DEVICEXX_APP_DEBUG("%s: OTA update\r\n", __func__);
-				devicexx_app_state = devicexx_app_state_upgrade;
-				devicexx_check_update();
-			}
-		}
-	}
-	else if (local_system_status.start_continue >= 3)
-	{
-		devicexx_force_smartlink();
-	}
-	if ((WIFI_SMARTLINK_START == network_current_state()) ||
-	        (WIFI_SMARTLINK_LINKING == network_current_state()) ||
-	        (WIFI_SMARTLINK_FINDING == network_current_state()) ||
-	        (WIFI_SMARTLINK_GETTING == network_current_state()))
-	{
-		if (devicexx_app_state_smart != devicexx_app_state)
-		{
-			DEVICEXX_APP_DEBUG("%s: begin smart config effect\r\n", __func__);
-			devicexx_app_state = devicexx_app_state_smart;
-			os_timer_disarm(&devicexx_app_smart_timer);
-			os_timer_setfn(&devicexx_app_smart_timer, (os_timer_func_t *)devicexx_app_smart_timer_tick, NULL);
-			os_timer_arm(&devicexx_app_smart_timer, 20, 1);
-		}
-	}
-	else
-	{
-		if (devicexx_app_state_smart == devicexx_app_state)
-		{
-			devicexx_app_state = devicexx_app_state_normal;
-			devicexx_app_apply_settings();
-			os_timer_disarm(&devicexx_app_smart_timer);
-		}
-	}
-}

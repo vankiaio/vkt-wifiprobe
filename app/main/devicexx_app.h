@@ -43,13 +43,14 @@ extern uint8_t at[];
 extern at_state_t at_state;
 extern uint8_t zgmode[] ;
 extern struct espconn pespconn;
-extern uint8_t sniffer_flag;
+extern uint16_t sniffer_flag;
 extern os_timer_t temer_10s;
 extern uint8_t send_flag;
 extern uint8_t bind_flag;
 extern uint8_t *loginName;
 extern uint8_t *loginPwd;
 extern uint8_t http_create[];
+extern uint8_t  url[128];
 void power_on(void);
 void update_post_bind(void);
 
@@ -61,10 +62,8 @@ typedef struct mcu_status_t {
 } __attribute__((aligned(1), packed)) mcu_status_t;
 
 typedef struct system_status_t {
-	uint8_t init_flag;
-	uint16_t start_count;
-	uint8_t start_continue;
-	mcu_status_t mcu_status;
+	uint8_t version_type;
+	uint16_t version_num;
 } __attribute__((aligned(4), packed)) system_status_t;
 
 typedef enum devicexx_app_state_t

@@ -90,7 +90,7 @@ ICACHE_FLASH_ATTR void main(int argc, char *argv[])
     // Set the port to print log info.
     UART_SetPrintPort(UART1);
     // Set UART and LOG baudrate
-    uart_init(BIT_RATE_9600, BIT_RATE_115200);
+    uart_init(BIT_RATE_115200, BIT_RATE_115200);
 
 #else
     // Set the port to print log info.

@@ -1,5 +1,4 @@
 
-//#include "driver/uart.h"  //串口0需要的头文件
 #include "osapi.h"  //串口1需要的头文件
 #include "user_interface.h" //WIFI连接需要的头文件
 #include "espconn.h"//TCP连接需要的头文件
@@ -9,14 +8,32 @@
 #include "tcpclient.h"
 #include "devicexx_app.h"
 #include "queue_uart.h"
+#include "httpclient.h"
 //#include "at_custom.h"
 
 os_timer_t checkTimer_wifistate;
-//struct espconn user_tcp_conn;
-uint8_t upgrade_tcp;
+struct espconn tcpserver;
+//uint8_t upgrade_tcp;
 uint8_t wifi_state = 0;
 uint8_t connet_flag = 0;
 uint8_t count = 0;
+
+typedef struct request_args_t {
+	char            * hostname;
+	int             port;
+	bool            secure;
+	char            * method;
+	char            * path;
+	char            * headers;
+	char            * post_data;
+	int             post_size;
+	char            * buffer;
+	int             buffer_size;
+	void            * ctx;
+	http_callback_t user_callback;
+} request_args_t;
+
+
 
 uint8_t http_head[] = {
    "HTTP/1.0 200 OK\r\n"\
@@ -118,17 +135,6 @@ uint8_t http_response[] = {
 };
 
 
-struct espconn tcpserver;
-uint8_t http_data[] = {
-    "HTTP/1.1 200 OK\r\n"\
-    "Content-Type:text/plain;charset=UTF-8\r\n"\
-    "Content-Disposition:attachment;filename=1.txt\r\n"\
-    "\r\n"\
-    "get data"\
-    "\r\n"
-};
-
-
 void ICACHE_FLASH_ATTR
 tcpserver_recon_cb(void *arg, sint8 errType)//异常断开回调
 {
@@ -214,17 +220,11 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
 
             os_memcpy(http_answer+206,default_str,14);
 
-
         }else {
-
                 espconn_send(pespconn,http_head,sizeof(http_head));
-
         }
     }
-
-
 }
-
 
 void ICACHE_FLASH_ATTR
 tcpserver_listen(void *arg)//服务器被链接回调
@@ -259,7 +259,7 @@ tcp_server(void)//开启tcp服务器
 
 
 
-//
+
 //void ICACHE_FLASH_ATTR uart_tcp_send(void *arg)
 //{
 //
@@ -318,7 +318,31 @@ tcp_server(void)//开启tcp服务器
 //	espconn_connect(&user_tcp_conn);
 //}
 
-void Check_WifiState(void) {
+
+
+ip_addr_t esp_server_ip;
+LOCAL void ICACHE_FLASH_ATTR
+user_esp_platform_dns_found(const char *name, ip_addr_t *ipaddr, void *arg) {
+	struct espconn *pespconn = (struct espconn *)arg;
+	if (ipaddr != NULL)
+	{
+		os_printf("user_esp_platform_dns_found %d.%d.%d.%d\n",
+				*((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1), *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
+
+		uint8_t remote_ip[4] = { 0, 0, 0, 0 };//目标IP地址,必须要先从手机获取，否则连接失败.
+		remote_ip[0] = *((uint8 *)&ipaddr->addr);
+		remote_ip[1] = *((uint8 *)&ipaddr->addr + 1);
+		remote_ip[2] = *((uint8 *)&ipaddr->addr + 2);
+		remote_ip[3] = *((uint8 *)&ipaddr->addr + 3);
+
+//升级
+		ota_start_upgrade(remote_ip, 80, "");
+	}
+}
+
+
+void ICACHE_FLASH_ATTR
+Check_WifiState(void) {
 
 	uint8 getState;
 	getState = wifi_station_get_connect_status();
@@ -329,18 +353,27 @@ void Check_WifiState(void) {
 	if (getState == STATION_GOT_IP) {
 		os_printf("WIFI Connected！\r\n");
 		os_timer_disarm(&checkTimer_wifistate);
-		const char remote_ip[4] = { 192, 178, 1, 107 };//目标IP地址,必须要先从手机获取，否则连接失败.
 
-		if(upgrade_tcp == 1)
-		{
-            ota_start_upgrade(remote_ip, 80, "");
-		}else
-		{
 
-//    		struct ip_info info;
-//    		wifi_get_ip_info(STATION_IF, &info);	//查询 WiFi模块的 IP 地址
-//    		my_station_init((struct ip_addr *) remote_ip, &info.ip, 5000);//连接到目标服务器的6000端口
-		}
+		HTTPCLIENT_DEBUG("DNS request\n");
+		request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
+		req->hostname         = strdup(url);
+		req->port             = 80;
+		req->secure           = false;
+		req->method           = strdup("POST");
+		req->path             = strdup("");
+		req->headers          = strdup("Content-Type:text/plain");
+		req->post_data    	  = NULL;
+		req->post_size        = 0;
+		req->buffer_size      = 1;
+		req->buffer           = (char *)os_malloc(1);
+		req->buffer[0]        = '\0'; // Empty string
+		req->user_callback    = NULL;
+		req->ctx              = NULL;
+
+		err_t error = espconn_gethostbyname((struct espconn *)req, url, &esp_server_ip, user_esp_platform_dns_found);
+		os_printf("err %d\n",error);
+
 	}else
 	    wifi_state++;
 	if(wifi_state == 20)
@@ -350,23 +383,26 @@ void Check_WifiState(void) {
 	}
 }
 
-void tcp_client_init()	//初始化
+void ICACHE_FLASH_ATTR
+tcp_client_init(uint8_t ssid[32], uint8_t pwd[32])	//初始化
 {
 
 	wifi_set_opmode(0x01);	//设置为STATION模式
 
 	struct station_config stationConf;
-	os_strcpy(stationConf.ssid, "Yajiehui3");	  //改成你自己的   路由器的用户名
-	os_strcpy(stationConf.password, "yajiehui2016188"); //改成你自己的   路由器的密码
+	os_strcpy(stationConf.ssid, ssid);	  //改成你自己的   路由器的用户名
+	os_strcpy(stationConf.password, pwd); //改成你自己的   路由器的密码
 
 	wifi_station_set_config(&stationConf);	//设置WiFi station接口配置，并保存到 flash
 	wifi_station_connect();	//连接路由器
 
-	upgrade_tcp = 1;
+//	upgrade_tcp = 1;
 
 	os_timer_disarm(&checkTimer_wifistate);	//取消定时器定时
 	os_timer_setfn(&checkTimer_wifistate, (os_timer_func_t *) Check_WifiState, NULL);	//设置定时器回调函数
 	os_timer_arm(&checkTimer_wifistate, 1000, 1);	//启动定时器，单位：毫秒
 
 }
+
+
 
