@@ -20,6 +20,7 @@
 #include "devicexx_app.h"
 #include "espconn.h"
 #include "tcpclient.h"
+#include "upgrade.h"
 #include "httpclient.h"
 #include "cJSON.h"
 #include "platform.h"
@@ -111,12 +112,104 @@ LOCAL system_status_t local_system_status = {
 	.version_num = 0,
 };
 
-LOCAL os_timer_t devicexx_app_smart_timer;
-LOCAL devicexx_app_state_t devicexx_app_state = devicexx_app_state_normal;
-LOCAL uint8_t smart_effect = 0;
+
 
 uint8_t uart_receive_at[2048];
 uint8_t uart_fifo_flag = 0;
+
+
+
+void ICACHE_FLASH_ATTR
+ota_finished_callback(void *arg)
+{
+    struct upgrade_server_info *update = arg;
+        if (update->upgrade_flag == true)
+        {
+
+        	devicexx_app_save();
+            os_printf("OTA  Success ! rebooting!\n");
+
+            system_upgrade_reboot();
+        }else
+        {
+            os_printf("OTA failed!\n");
+//            upgrade_tcp = 0;
+            Check_WifiState();
+
+//            os_timer_arm(&timer_3S, 3000, 0);//开机
+        }
+}
+
+void ICACHE_FLASH_ATTR
+ota_start_upgrade(const char *server_ip, uint16_t port,const char *path)
+//ota_start_upgrade(uint16_t port,const char *path)
+{
+    char *file;
+    //获取系统的目前加载的是哪个bin文件
+    uint8_t userBin = system_upgrade_userbin_check();
+
+    switch (userBin) {
+
+    //如果检查当前的是处于user1的加载文件，那么拉取的就是user2.bin
+    case UPGRADE_FW_BIN1:
+        file = "user2.000.bin";
+
+        break;
+
+        //如果检查当前的是处于user2的加载文件，那么拉取的就是user1.bin
+    case UPGRADE_FW_BIN2:
+        file = "user1.000.bin";
+        break;
+
+        //如果检查都不是，可能此刻不是OTA的bin固件
+    default:
+        os_printf("Fail read system_upgrade_userbin_check! \n\n");
+        return;
+    }
+
+    file[6] = local_system_status.version_num/100 + 48;
+    file[7] = local_system_status.version_num%100/10 + 48;
+    file[8] = local_system_status.version_num%100%10 + 48;
+
+    struct upgrade_server_info* update =
+            (struct upgrade_server_info *) os_zalloc(sizeof(struct upgrade_server_info));
+    update->pespconn = (struct espconn *) os_zalloc(sizeof(struct espconn));
+    //设置服务器地址
+    os_memcpy(update->ip, server_ip, 4);
+    //设置服务器端口
+    update->port = port;
+    //设置OTA回调函数
+    update->check_cb = ota_finished_callback;
+    //设置定时回调时间
+    update->check_times = 30000;
+    //从 4M *1024 =4096申请内存
+    update->url = (uint8 *)os_zalloc(4096);
+
+    //打印下請求地址
+//    os_printf("Http Server Address:%d.%d.%d.%d ,port: %d,filePath: %s,fileName: %s \n",
+//    		IP2STR(update->ip), update->port, path, file);
+
+    //拼接完整的 URL去请求服务器
+//    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: "IPSTR":%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
+//			               path, file, IP2STR(update->ip), update->port);
+
+    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: %s:%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
+			               path, file, update_host, update->port );
+
+
+    os_printf("url %s\n",update->url);
+
+    if (system_upgrade_start(update) == false) {
+        os_printf(" Could not start upgrade\n");
+        //释放资源
+        os_free(update->pespconn);
+        os_free(update->url);
+        os_free(update);
+    } else {
+        os_printf(" Upgrading...\n");
+    }
+}
+
 
 
 void ICACHE_FLASH_ATTR
@@ -758,34 +851,30 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_timer_disarm(&temer_10s);
 
                 uint8_t * version_addr = NULL;
-                uint8_t baiwei, shiwei, gewei,version_type;
+                uint8_t version_temp[11] ;//302e303031
+                uint8_t version_type;
                 uint16_t version_num;
 
 
                 version_addr = strstr(pdata,"76657273696f6e");//version
-                os_printf("version_type %c\n",&version_type);
-                os_memcpy(&version_type,version_addr+22,1);
-                os_printf("version_type %d\n",version_type);
 
-                os_memcpy(&baiwei,version_addr+26,1);
-                os_memcpy(&shiwei,version_addr+28,1);
-                os_memcpy(&gewei,version_addr+30,1);
+                os_memcpy(version_temp,version_addr+20,10);
+                version_temp[10] = '\0';
+                os_printf("version_temp %s\n",version_temp);
+                version_type = version_temp[1]-48;
+                version_num = (version_temp[5]-48)*100 + (version_temp[7]-48)*10 + version_temp[9]-48;
+                os_printf("version_type %d version_num %d\n",version_type,version_num);
 
-                os_printf("baiwei %d shiwei %d gewei %d\n",baiwei,shiwei,gewei);
-
-
-
-
-                version_num = baiwei*100+shiwei*10+gewei;
-                os_printf("version_num %d\n",version_num);
-//                if(local_system_status.version_type == version_type && local_system_status.version_num < version_num)
-                if(1)
+                os_printf("local_system_status.version_num %d\n",local_system_status.version_num);
+                if(local_system_status.version_type == version_type && local_system_status.version_num < version_num)
                 {
-//                    uint8_t ap_ssid[32], ap_pwd[32];
+
                     uint8_t url_temp[128] ;
                     uint8_t * url_addr = NULL;
                     uint8_t * upgrade_url = NULL;
                     uint8_t url_len, i;
+
+                    local_system_status.version_num = version_num;
 
                     url_addr = strstr(pdata,"75726c");//url
                     url_len = version_addr-url_addr-18;
@@ -973,13 +1062,21 @@ devicexx_app_apply_settings(void)
 void ICACHE_FLASH_ATTR
 devicexx_app_load(void)
 {
+	os_printf("version_type %d  version_num %d\n",local_system_status.version_type,local_system_status.version_num);
+
 	system_param_load(
 	    (DEVICEXX_APP_START_SEC),
 	    0,
 	    (void *)(&local_system_status),
 	    sizeof(local_system_status));
-
-	devicexx_app_save();
+//flash 擦除置1
+	if(local_system_status.version_type == 0xff && local_system_status.version_num == 0xffff)
+	{
+		local_system_status.version_type++;
+		local_system_status.version_num++;
+		devicexx_app_save();
+	}
+	os_printf("version_type %d  version_num %d\n",local_system_status.version_type,local_system_status.version_num);
 }
 
 void ICACHE_FLASH_ATTR
@@ -991,106 +1088,6 @@ devicexx_app_save(void)
 	    sizeof(local_system_status));
 }
 
-void ICACHE_FLASH_ATTR
-devicexx_app_set_smart_effect(uint8_t effect)
-{
-	smart_effect = effect;
-}
 
-void ICACHE_FLASH_ATTR
-devicexx_app_smart_timer_tick()
-{
-
-}
-//
-//void ICACHE_FLASH_ATTR
-//devicexx_app_start_check(uint32_t system_start_seconds)
-//{
-//	if ((local_system_status.start_continue != 0) && (system_start_seconds > 5))
-//	{
-//		local_system_status.start_continue = 0;
-//		devicexx_app_save();
-//	}
-//
-//	if (local_system_status.start_continue >= 10)
-//	{
-//		if (devicexx_app_state_restore != devicexx_app_state)
-//		{
-//			DEVICEXX_APP_DEBUG("%s: system restore\r\n", __func__);
-//			devicexx_app_state = devicexx_app_state_restore;
-//			// Init flag and counter
-//			local_system_status.init_flag = 0;
-//			local_system_status.start_continue = 0;
-//			// Save param
-//			devicexx_app_save();
-//			// Restore system
-//			system_restore();
-//			// Device++ recovery
-//			devicexx_system_recovery();
-//			// Restart system
-//			system_restart();
-//		}
-//	}
-//	else if (local_system_status.start_continue >= 9)
-//	{
-//		os_timer_disarm(&devicexx_app_smart_timer);
-//		// Do something
-//	}
-//	else if (local_system_status.start_continue >= 8)
-//	{
-//		os_timer_disarm(&devicexx_app_smart_timer);
-//		// Do something
-//	}
-//	else if (local_system_status.start_continue >= 7)
-//	{
-//		os_timer_disarm(&devicexx_app_smart_timer);
-//		// Do something
-//
-//	}
-//	else if (local_system_status.start_continue >= 6)
-//	{
-//		os_timer_disarm(&devicexx_app_smart_timer);
-//		// Do something
-//	}
-//	else if (local_system_status.start_continue >= 5)
-//	{
-//		if (DEVICEXX_CONNECTED == devicexx_state())
-//		{
-//			if (devicexx_app_state_upgrade != devicexx_app_state)
-//			{
-//				DEVICEXX_APP_DEBUG("%s: OTA update\r\n", __func__);
-//				devicexx_app_state = devicexx_app_state_upgrade;
-//				devicexx_check_update();
-//			}
-//		}
-//	}
-//	else if (local_system_status.start_continue >= 3)
-//	{
-//		devicexx_force_smartlink();
-//	}
-//	if ((WIFI_SMARTLINK_START == network_current_state()) ||
-//	        (WIFI_SMARTLINK_LINKING == network_current_state()) ||
-//	        (WIFI_SMARTLINK_FINDING == network_current_state()) ||
-//	        (WIFI_SMARTLINK_GETTING == network_current_state()))
-//	{
-//		if (devicexx_app_state_smart != devicexx_app_state)
-//		{
-//			DEVICEXX_APP_DEBUG("%s: begin smart config effect\r\n", __func__);
-//			devicexx_app_state = devicexx_app_state_smart;
-//			os_timer_disarm(&devicexx_app_smart_timer);
-//			os_timer_setfn(&devicexx_app_smart_timer, (os_timer_func_t *)devicexx_app_smart_timer_tick, NULL);
-//			os_timer_arm(&devicexx_app_smart_timer, 20, 1);
-//		}
-//	}
-//	else
-//	{
-//		if (devicexx_app_state_smart == devicexx_app_state)
-//		{
-//			devicexx_app_state = devicexx_app_state_normal;
-//			devicexx_app_apply_settings();
-//			os_timer_disarm(&devicexx_app_smart_timer);
-//		}
-//	}
-//}
 
 

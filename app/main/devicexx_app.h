@@ -57,9 +57,6 @@ void update_post_bind(void);
 // Save user data to last 15, 14, 13 sector of flash
 #define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
 
-typedef struct mcu_status_t {
-	uint8_t reserved: 8;
-} __attribute__((aligned(1), packed)) mcu_status_t;
 
 typedef struct system_status_t {
 	uint8_t version_type;
@@ -80,8 +77,7 @@ void devicexx_receive(const d_object_t* object);
 void devicexx_app_apply_settings(void);
 void devicexx_app_load(void);
 void devicexx_app_save(void);
-void devicexx_app_start_check(uint32_t system_start_seconds);
-void devicexx_app_set_smart_effect(uint8_t effect);
+
 
 #endif /* __USER_DEVICEXX_VIRTUAL_MCU_H__ */
 
