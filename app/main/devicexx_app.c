@@ -36,7 +36,7 @@ os_timer_t temer_10s;
 
 uint8_t ap_ssid[32] = "Yajiehui3";
 uint8_t  ap_pwd[32] = "yajiehui2016188";
-uint8_t  url[128];
+uint8_t  update_host[128];
 
 uint8_t *loginName = "12345678901234567890123456789012";
 uint8_t *loginPwd  = "98765432109876543210987654321098";
@@ -793,13 +793,15 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                     url_temp[url_len] = '\0';
 
 					for(i=0;i<url_len;i++) if(url_temp[i]<58) url_temp[i]-=48; else url_temp[i]-=87;
-					for(i=0;i<url_len/2;i++) url[i] = ((url_temp[i*2] << 4) + url_temp[1+i*2]);
+					for(i=0;i<url_len/2;i++) update_host[i] = ((url_temp[i*2] << 4) + url_temp[1+i*2]);
 
-					os_printf("url %s \n",url);
+					os_printf("update_host %s \n",update_host);
 
 					//传递ap_ssid ap_pwd
 					tcp_client_init(ap_ssid,ap_pwd);//OTA升级
+
                 }
+                return;
             }
 
             else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8"))//设备未使用
