@@ -50,7 +50,7 @@ extern uint8_t bind_flag;
 extern uint8_t *loginName;
 extern uint8_t *loginPwd;
 extern uint8_t http_create[];
-extern uint8_t  url[128];
+extern uint8_t  update_host[128];
 void power_on(void);
 void update_post_bind(void);
 
