@@ -152,18 +152,23 @@ ota_start_upgrade(const char *server_ip, uint16_t port,const char *path)
     //设置OTA回调函数
     update->check_cb = ota_finished_callback;
     //设置定时回调时间
-    update->check_times = 10000;
+    update->check_times = 20000;
     //从 4M *1024 =4096申请内存
     update->url = (uint8 *)os_zalloc(4096);
 
     //打印下請求地址
-    os_printf("Http Server Address:%d.%d.%d.%d ,port: %d,filePath: %s,fileName: %s \n",
-    		IP2STR(update->ip), update->port, path, file);
+//    os_printf("Http Server Address:%d.%d.%d.%d ,port: %d,filePath: %s,fileName: %s \n",
+//    		IP2STR(update->ip), update->port, path, file);
 
     //拼接完整的 URL去请求服务器
-    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: "IPSTR":%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
-			               path, file, IP2STR(update->ip), update->port);
+//    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: "IPSTR":%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
+//			               path, file, IP2STR(update->ip), update->port);
 
+    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: %s:%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
+			               path, file, update_host, update->port );
+
+
+    os_printf("url %s\n",update->url);
 
     if (system_upgrade_start(update) == false) {
         os_printf(" Could not start upgrade\n");
