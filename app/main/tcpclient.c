@@ -329,12 +329,13 @@ user_esp_platform_dns_found(const char *name, ip_addr_t *ipaddr, void *arg) {
 		os_printf("user_esp_platform_dns_found %d.%d.%d.%d\n",
 				*((uint8 *)&ipaddr->addr), *((uint8 *)&ipaddr->addr + 1), *((uint8 *)&ipaddr->addr + 2), *((uint8 *)&ipaddr->addr + 3));
 
-		uint8_t remote_ip[4] = { 0, 0, 0, 0 };//目标IP地址,必须要先从手机获取，否则连接失败.
+		uint8_t remote_ip[4] = {221, 122, 119, 226};//目标IP地址,必须要先从手机获取，否则连接失败.
 		remote_ip[0] = *((uint8 *)&ipaddr->addr);
 		remote_ip[1] = *((uint8 *)&ipaddr->addr + 1);
 		remote_ip[2] = *((uint8 *)&ipaddr->addr + 2);
 		remote_ip[3] = *((uint8 *)&ipaddr->addr + 3);
 
+//		os_printf("ip %d %d %d %d\n",remote_ip[0],remote_ip[1],remote_ip[2],remote_ip[3]);
 //升级
 		ota_start_upgrade(remote_ip, 80, "");
 	}
@@ -352,12 +353,14 @@ Check_WifiState(void) {
 	//查询 ESP8266 WiFi station 接口连接 AP 的状态
 	if (getState == STATION_GOT_IP) {
 		os_printf("WIFI Connected！\r\n");
+		wifi_state = 0;
 		os_timer_disarm(&checkTimer_wifistate);
 
+//		ota_start_upgrade(remote_ip, 80, "");
 
 		HTTPCLIENT_DEBUG("DNS request\n");
 		request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
-		req->hostname         = strdup(url);
+		req->hostname         = strdup(update_host);
 		req->port             = 80;
 		req->secure           = false;
 		req->method           = strdup("POST");
@@ -371,8 +374,11 @@ Check_WifiState(void) {
 		req->user_callback    = NULL;
 		req->ctx              = NULL;
 
-		err_t error = espconn_gethostbyname((struct espconn *)req, url, &esp_server_ip, user_esp_platform_dns_found);
+		err_t error = espconn_gethostbyname((struct espconn *)req, update_host, &esp_server_ip, user_esp_platform_dns_found);
 		os_printf("err %d\n",error);
+
+		os_free(req);
+		req = NULL;
 
 	}else
 	    wifi_state++;

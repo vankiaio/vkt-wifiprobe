@@ -152,7 +152,7 @@ ota_start_upgrade(const char *server_ip, uint16_t port,const char *path)
     //设置OTA回调函数
     update->check_cb = ota_finished_callback;
     //设置定时回调时间
-    update->check_times = 20000;
+    update->check_times = 30000;
     //从 4M *1024 =4096申请内存
     update->url = (uint8 *)os_zalloc(4096);
 
