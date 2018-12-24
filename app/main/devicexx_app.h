@@ -43,24 +43,28 @@ extern uint8_t at[];
 extern at_state_t at_state;
 extern uint8_t zgmode[] ;
 extern struct espconn pespconn;
-extern uint16_t sniffer_flag;
+extern uint8_t sniffer_flag;
 extern os_timer_t temer_10s;
 extern uint8_t send_flag;
 extern uint8_t bind_flag;
 extern uint8_t *loginName;
 extern uint8_t *loginPwd;
 extern uint8_t http_create[];
-extern uint8_t  update_host[128];
 void power_on(void);
 void update_post_bind(void);
 
 // Save user data to last 15, 14, 13 sector of flash
 #define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
 
+typedef struct mcu_status_t {
+	uint8_t reserved: 8;
+} __attribute__((aligned(1), packed)) mcu_status_t;
 
 typedef struct system_status_t {
-	uint8_t version_type;
-	uint16_t version_num;
+	uint8_t init_flag;
+	uint16_t start_count;
+	uint8_t start_continue;
+	mcu_status_t mcu_status;
 } __attribute__((aligned(4), packed)) system_status_t;
 
 typedef enum devicexx_app_state_t
@@ -77,7 +81,8 @@ void devicexx_receive(const d_object_t* object);
 void devicexx_app_apply_settings(void);
 void devicexx_app_load(void);
 void devicexx_app_save(void);
-
+void devicexx_app_start_check(uint32_t system_start_seconds);
+void devicexx_app_set_smart_effect(uint8_t effect);
 
 #endif /* __USER_DEVICEXX_VIRTUAL_MCU_H__ */
 
