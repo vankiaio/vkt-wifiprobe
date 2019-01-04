@@ -68,5 +68,5 @@ platform_init(void)
     os_timer_setfn(&timer_3S, (os_timer_func_t *)delay_power_on, NULL);
     os_timer_arm(&timer_3S, 3000, 0);//¿ª»ú
     os_printf("wait... 3s\n");
-    sniffer_flag = 0;
+    gnrmc_gps_flag = 0;
 }
