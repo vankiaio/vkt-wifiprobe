@@ -45,9 +45,9 @@ extern at_state_t at_state;
 extern uint8_t zgmode[] ;
 extern struct espconn pespconn;
 extern uint16_t gnrmc_gps_flag;
-extern os_timer_t temer_10s;
-extern uint8_t send_flag;
-extern uint8_t bind_flag;
+
+//extern uint8_t send_flag;
+//extern uint8_t bind_flag;
 extern uint8_t loginName[];
 extern uint8_t loginPwd[];
 extern uint8_t http_create[];

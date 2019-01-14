@@ -286,9 +286,11 @@ devicexx_led_init(void)
 {
 //    PIN_FUNC_SELECT(pin_name[PIN_LED], pin_func[PIN_LED]);
     PIN_FUNC_SELECT(pin_name[PIN_LED_S], pin_func[PIN_LED_S]);
+    PIN_FUNC_SELECT(pin_name[PIN_GPS_S], pin_func[PIN_GPS_S]);
     PIN_FUNC_SELECT(pin_name[PIN_POWER], pin_func[PIN_POWER]);
 //    GPIO_OUTPUT_SET(PIN_LED, 1);
-    GPIO_OUTPUT_SET(PIN_LED_S, 1);
+    GPIO_OUTPUT_SET(PIN_LED_S, 0);
+    GPIO_OUTPUT_SET(PIN_GPS_S, 1);
     GPIO_OUTPUT_SET(PIN_POWER, 1);
 
 }
@@ -299,14 +301,14 @@ devicexx_led_init(void)
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-LOCAL void ICACHE_FLASH_ATTR
-devicexx_key_init(void)
-{
-    single_key[0] = key_init_single(PIN_KEY, devicexx_key_short_press, devicexx_key_medium_press, devicexx_key_long_press, devicexx_key_extra_press, devicexx_key_super_press);
-    keys.key_num = KEY_COUNT;
-    keys.single_key = single_key;
-    key_init(&keys);
-}
+//LOCAL void ICACHE_FLASH_ATTR
+//devicexx_key_init(void)
+//{
+//    single_key[0] = key_init_single(PIN_KEY, devicexx_key_short_press, devicexx_key_medium_press, devicexx_key_long_press, devicexx_key_extra_press, devicexx_key_super_press);
+//    keys.key_num = KEY_COUNT;
+//    keys.single_key = single_key;
+//    key_init(&keys);
+//}
 
 /******************************************************************************
  * FunctionName : devicexx_io_init
@@ -319,6 +321,6 @@ devicexx_io_init(void)
 {
     devicexx_led_init();
 //    devicexx_relay_init();
-    devicexx_key_init();
+//    devicexx_key_init();
     devicexx_io_led_timer_tick(1);
 }

@@ -29,7 +29,7 @@
 
 
 os_timer_t delay_2s;
-os_timer_t temer_10s;
+
 
 
 
@@ -62,31 +62,31 @@ uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
 uint8_t http_post_bind [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,\"\r\n";
 
 
-uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=11618.03931&wei=3958.99464&time=111111111111\",0,,0,,0,,\"\r\n";
-//uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,"0,0,117,"/MacGather/submitValue?deviceId=7ARjo4q3acNeWTGF3mRWsX&version=0.000&lng=11618.03931&wei=3958.99464&time=111111111111",0,,0,,0,,"\r\n";
+uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=11618.03931&wei=3958.99464&time=034639110119\",0,,0,,0,,\"\r\n";
+//uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,"0,0,117,"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=11618.03931&wei=3958.99464&time=034639110119\",0,,0,,0,,\"\r\n";
 //AT+EHTTPSEND=0,118,118,"0,0,99,"/MacGather/submitValue?deviceId=7ARjo4q3acNeWTGF3mRWsX&version=0.000&lng=00000.00000&lat=0000.00000",0,,0,,0,,"
 
-uint8_t http_send0 [] = "AT+EHTTPSEND=1,2961,436,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2899,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C2274696D657374616D70223A2231382F31312F30312C31383A35343A3135222C22636f6c6c6563744964223A223132353830222C226C6F6E676974756465223A223131362E333133323838222C226C61746974756465223A2233392E393930373631222C226D61635F737472223A223031303035453746464646412C3031303035453030303046432C4343423841383035363438342C\"\r\n";
-uint8_t http_send1[] = "AT+EHTTPSEND=1,2961,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-uint8_t http_send2[] = "AT+EHTTPSEND=1,2961,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-uint8_t http_send3[] = "AT+EHTTPSEND=1,2961,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-uint8_t http_send4[] = "AT+EHTTPSEND=1,2961,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-uint8_t http_send5[] = "AT+EHTTPSEND=1,2961,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-uint8_t http_send6[] = "AT+EHTTPSEND=0,2961,55,\"3131323233333434353536362C313132323333343435353636227d,\"\r\n";
+uint8_t http_send0[] = "AT+EHTTPSEND=1,2975,450,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2913,7b226465766963654964223a2256616e6b69612d57502d454346414243314139463234222c2274696d657374616d70223a2231382f31312f30312c31383a35343a3135222c22636f6c6c6563744964223a22434a30303030303030303230222c226c6f6e676974756465223a223131362e333133323838222c226c61746974756465223a2233392e393930373631222c226d61635f737472223a223031303035453746464646412c3031303035453030303046432c4343423841383035363438342c\"\r\n";//388
+uint8_t http_send1[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
+uint8_t http_send2[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
+uint8_t http_send3[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
+uint8_t http_send4[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
+uint8_t http_send5[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
+uint8_t http_send6[] = "AT+EHTTPSEND=0,2975,55,\"3131323233333434353536362C313132323333343435353636227d,\"\r\n";
 
 uint8_t http_discon[] = "AT+EHTTPDISCON=0\r\n";
 uint8_t http_destroy[] = "AT+EHTTPDESTROY=1\r\n";
 
 uint8_t probe_flag = 0;
 uint8_t creat_flag = 0;
-uint8_t send_flag = 0;
+//uint8_t send_flag = 0;
 uint16_t gnrmc_gps_flag = 0;
 at_state_t at_state = 0;
 uint16_t z_adc = 0;
 uint8_t shut_down_flag = 0;
 uint8_t get_tag_flag = 0;
-uint8_t bind_flag = 0;
-uint8_t bound_flag = 1;
+//uint8_t bind_flag = 0;
+//uint8_t bound_flag = 1;
 
 
 uint8_t zgmode[] = "AT+ZGMODE=2\r\n";
@@ -96,13 +96,18 @@ uint8_t zgrun[] = "AT+ZGRUN=2\r\n";
 
 uint8_t parameter_deviceId[] = "Vankia-WP-112233445566";
 //uint8_t                   = "vankia-01-68c63a8a2420";
-uint8_t parameter_timestamp[] = "111111111111";//都为0会与tag重叠
 
+//parameter_longitude=11618.00871;
+//parameter_latitude=3958.98470;
+//parameter_timestamp=034639110119;
+uint8_t parameter_timestamp[] = "034639110119";//都是1,都为0会与tag重叠
 //                              18/11/01,18:54:15
-uint8_t parameter_tag[] = "00000000";
-uint8_t parameter_longitude[] = "00000.00000";
+
+
+uint8_t parameter_tag[] = "000000000000";//CJ,JD
+uint8_t parameter_longitude[] = "11618.00871";
 //                              11618.03708
-uint8_t parameter_latitude[] = "0000.00000";
+uint8_t parameter_latitude[] = "3958.98470";
 //                             3958.98966
 #define JSON_DEVICE_MAC "{\"deviceId\":\"%s\",\"timestamp\":\"%s\",\"collectId\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\",\"mac_str\":\"%s\"}"
 
@@ -322,13 +327,13 @@ str_ascii_str(char * body)
     os_printf("len %d str %s \n",len,str);
     os_printf("\n");
 
-    os_memcpy(http_send0+87,str    , 371);
-    os_memcpy(http_send1+25,str+374, 494);
-    os_memcpy(http_send2+25,str+868, 494);
-    os_memcpy(http_send3+25,str+1362,494);
-    os_memcpy(http_send4+25,str+1856,494);
-    os_memcpy(http_send5+25,str+2350,494);
-    os_memcpy(http_send6+24,str+2844,56 );
+    os_memcpy(http_send0+87,str    , 379);
+    os_memcpy(http_send1+25,str+382, 494);
+    os_memcpy(http_send2+25,str+876, 494);
+    os_memcpy(http_send3+25,str+1370,494);
+    os_memcpy(http_send4+25,str+1864,494);
+    os_memcpy(http_send5+25,str+2358,494);
+    os_memcpy(http_send6+24,str+2852,56 );
     http_send6[78] = ',';
     http_send6[79] = '\"';
 
@@ -536,10 +541,10 @@ void ICACHE_FLASH_ATTR
 uart_receive(const uint8_t * pdata, uint16_t length)
 {
 
-    os_timer_disarm(&temer_10s);
-    os_timer_arm(&temer_10s, 20000, 1);//20s后没有收到数据，重启
+    os_timer_disarm(&timer_90s);
+    os_timer_arm(&timer_90s, 30000, 1);//90s后没有收到数据，重启
 
-	os_printf("+++++++++++++++UART Data received++++++++++++++++\n");
+	os_printf("+++++++++++UART Data received+++++++++++++\n");
 	uint8_t end[1] = {'\0'};
 	os_memcpy(pdata+length,end,1);
 
@@ -702,7 +707,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_printf("NB turned off, now system turn off\n");
     //            delay_power_on();//关机
                 shut_down_flag = 1;
-                os_timer_disarm(&temer_10s);
+//                os_timer_disarm(&temer_90s);
                 power_on();
                 break;
 
@@ -824,7 +829,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
-                send_flag = 0;
+//                send_flag = 0;
                 //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
                 os_memset(uart_receive_at,'\0',sizeof(char)*2048);
                 queue_uart_send(read_adc,os_strlen(read_adc));
@@ -838,16 +843,17 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             }else if(os_strstr(uart_receive_at,"636f6c6c6563744964"))//获得id
             {
                 uint8_t i;
-                uint8_t temp_tag[] = "1234567890123456";
+                uint8_t temp_tag[] = "1234567890123456789012";
                 char * start_addr = NULL;
 
-                start_addr = strstr(uart_receive_at,"22636f6c6c656374496422");//"collectId"
+                wifi_set_opmode(NULL_MODE);
 
-                os_memcpy(temp_tag,start_addr+26,16);
+                start_addr = strstr(uart_receive_at,"22636f6c6c656374496422");//"collectId"
+                os_memcpy(temp_tag,start_addr+26,22);
 
     //            os_printf("temp_tag %s\n",temp_tag);
 
-                for(i=0;i<16;i++)
+                for(i=0;i<22;i++)
                 {
                     if(temp_tag[i]<58)
                     {
@@ -857,7 +863,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                         temp_tag[i]-=87;
                     }
                 }
-                for(i=0;i<8;i++)
+                for(i=0;i<11;i++)
                 {
                     parameter_tag[i] = ((temp_tag[i*2] << 4) + temp_tag[1+i*2]);
     //                os_printf("%d,,%d\n",uart_receive_at[94+i*2],uart_receive_at[95+i*2]);
@@ -866,27 +872,14 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
                 at_state = NONE;
                 os_printf("tag %s\n",parameter_tag);
-                get_tag_flag = 1;//获得任务ID标志
 
-                //开始执行任务
-                if(0 != os_strcmp(parameter_tag,"00000000"))//不等于00000000
+                if(0 != os_strcmp(parameter_tag,"00000000000"))//不等于00000000
                 {
-                	get_tag_flag  = 1;
-    //                bind_flag = 1;
-                	if(send_flag == 0)
-                	{
-
-                        led_state = 5;
-                        probe_flag = 1;
-                        gnrmc_gps_flag = 0;
-                        sniffer_init();
-                        sniffer_init_in_system_init_done();
-                        send_flag = 1;
-                	}
+                    get_tag_flag = 1;//获得任务ID标志
 
                 }
-                os_timer_disarm(&temer_10s);
-                os_timer_arm(&temer_10s, 20000, 1);//20s后没有收到数据，重启
+                os_timer_disarm(&timer_90s);
+                os_timer_arm(&timer_90s, 90000, 1);//20s后没有收到数据，重启
 //                queue_uart_send(zgmode,os_strlen(zgmode));
 //                os_printf("send %s\n",zgmode);
 //                if(send_flag == 0)
@@ -905,7 +898,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
             }else if(os_strstr(uart_receive_at,"636f6465223a223222"))//code":"2"  升级
             {
-                os_timer_disarm(&temer_10s);
+                os_timer_disarm(&timer_90s);
 
                 uint8_t * version_addr = NULL;
                 uint8_t version_temp[11] ;//302e303031
@@ -953,9 +946,9 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 return;
             }
 
-            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8"))//设备未使用
+            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//设备未使用
             {
-                bind_flag = 0;
+//                bind_flag = 0;
                 at_state = WAIT;
                 devicexx_io_led_timer_tick(1);
                 devicexx_io_set_led_state(2);
@@ -979,7 +972,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_memcpy(http_answer+206,bind_success,12);
                 os_printf("http_head = %s\n",http_answer);
 
-                wifi_set_opmode(NULL_MODE);
+
                 //再次获取id
                 queue_uart_send(http_get_tag,os_strlen(http_get_tag));
                 os_printf("send %s\n",http_get_tag);
@@ -1022,74 +1015,76 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             return;
 
         }
-    //    parameter_longitude=3958.95464,3958.99464
-    //    parameter_latitude=11618.0144,11618.03931
-
-
-
-
 
 
         if(os_strstr(uart_receive_at,"GNRMC"))
         {
             gnrmc_gps_flag++;
+
             if(uart_receive_at[17] == 'A')
             {
+                GPIO_OUTPUT_SET(PIN_GPS_S, 0);
                 os_printf("receive %s\n",uart_receive_at);
 
                 os_memcpy(parameter_longitude,uart_receive_at + 32, os_strlen(parameter_longitude));
                 os_memcpy(parameter_latitude, uart_receive_at + 19 , os_strlen(parameter_latitude));
 
-//                os_memcpy(http_get_tag+105, parameter_longitude, os_strlen(parameter_longitude));
-//                os_memcpy(http_get_tag+121, parameter_latitude , os_strlen(parameter_latitude));
+                os_memcpy(http_get_tag+106, parameter_longitude, os_strlen(parameter_longitude));
+                os_memcpy(http_get_tag+122, parameter_latitude , os_strlen(parameter_latitude));
 
                 os_memcpy(parameter_timestamp, uart_receive_at + 7 , 6);
                 os_memcpy(parameter_timestamp+6, uart_receive_at + 53 ,6);
                 os_memcpy(http_get_tag + 138, parameter_timestamp , 12);
                 os_printf("parameter_longitude=%s\nparameter_latitude=%s\nparameter_timestamp=%s\n",parameter_longitude,parameter_latitude,parameter_timestamp);
 
+
+
+
                 if(creat_flag == 0)
                     create_http(0);
-                else
-                {
-                    if(send_flag == 0)
-                    {
-                        get_tag_flag  = 1;
-        //                bind_flag = 1;
-                        led_state = 5;
-                        probe_flag = 1;
-                        gnrmc_gps_flag = 0;
-                        sniffer_init();
-                        sniffer_init_in_system_init_done();
-                        send_flag = 1;
-                    }
-                }
+//                else
+//                {
+//                    if(send_flag == 0 )
+//                    {
+//                        get_tag_flag  = 1;
+//        //                bind_flag = 1;
+////                        led_state = 5;
+////                        probe_flag = 1;
+////                        gnrmc_gps_flag = 0;
+////                        sniffer_init();
+////                        sniffer_init_in_system_init_done();
+////                        send_flag = 1;
+//                    }
+//                }
 
-                return;
 
 
             }else
             {
                 uint8_t i;
+                GPIO_OUTPUT_SET(PIN_GPS_S, 1);
                 at_state = WAIT;
                 for(i=0;i<12;i++)
                     parameter_timestamp[i] = '0';
     //            os_printf("parameter_timestamp %s\n",parameter_timestamp);
             }
 
-            os_printf("at_state %d,bind_flag %d,sniffer_flag %d\n",at_state,bind_flag,gnrmc_gps_flag);
-//            if(at_state == NONE && sniffer_flag > 20)
-//            {
-//                probe_flag = 1;
-//                sniffer_flag = 0;
-//                sniffer_init();
-//                sniffer_init_in_system_init_done();
-//            }
+            os_printf("at_state = %d,gnrmc_gps_flag = %d\n",at_state,gnrmc_gps_flag);
+            if(get_tag_flag == 1 && gnrmc_gps_flag > 30)
+            {
+
+                led_state = 5;
+                probe_flag = 1;
+                gnrmc_gps_flag = 0;
+                devicexx_io_led_timer_tick();
+                sniffer_init();
+                sniffer_init_in_system_init_done();
+            }
 
             if(gnrmc_gps_flag > 1200)//20分钟无定位，重启一次
             {
-                os_timer_disarm(&temer_10s);
-                os_timer_arm(&temer_10s, 20000, 1);
+                os_timer_disarm(&timer_90s);
+                os_timer_arm(&timer_90s, 90000, 1);
             }
 
         }
