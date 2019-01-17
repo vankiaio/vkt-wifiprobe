@@ -17,11 +17,16 @@ typedef enum {
     NONE,
 	LED,
     ZADC,
+    CCLK,
     ZCFUN,
     ZOFF,
     ZGMODE,
+    ZGMODE1,
     ZGNMEA,
+    ZGNMEA1,
+    ZGDATA,
     ZGRUN,
+    ZGSTOP,
     FIRCON,
     POSTBIND,
     HTTP_CON,
@@ -44,7 +49,7 @@ extern uint8_t at[];
 extern at_state_t at_state;
 extern uint8_t zgmode[] ;
 extern struct espconn pespconn;
-extern uint16_t gnrmc_gps_flag;
+extern uint8_t gnrmc_gps_flag;
 
 //extern uint8_t send_flag;
 //extern uint8_t bind_flag;
@@ -54,7 +59,7 @@ extern uint8_t http_create[];
 extern uint8_t  update_host[128];
 void power_on(void);
 void update_post_bind(void);
-
+void check_id(void);
 // Save user data to last 15, 14, 13 sector of flash
 #define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
 

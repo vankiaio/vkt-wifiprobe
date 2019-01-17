@@ -50,7 +50,7 @@ devicexx_io_led_timer_tick()
 
     case 1:        
         GPIO_OUTPUT_SET(PIN_LED_S, state);
-        os_timer_arm(&devicexx_io_led_timer, 500, 1);
+        os_timer_arm(&devicexx_io_led_timer, 800, 1);
 //        os_printf("1,500 \n");
         break;
     case 2:
@@ -322,5 +322,5 @@ devicexx_io_init(void)
     devicexx_led_init();
 //    devicexx_relay_init();
 //    devicexx_key_init();
-    devicexx_io_led_timer_tick(1);
+    devicexx_io_led_timer_tick();
 }

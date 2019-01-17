@@ -35,7 +35,7 @@ os_timer_t delay_2s;
 
 #define VOWSTAR_WAN_DEBUG(format, ...) os_printf(format, ##__VA_ARGS__)
 
-uint8_t ap_ssid[32] = "vankia";
+uint8_t ap_ssid[32] = "qingzhu-vq";
 uint8_t  ap_pwd[32] = "12345678";
 uint8_t  update_host[128];
 
@@ -43,6 +43,7 @@ uint8_t loginName[] = "12345678901234567890123456789012";
 uint8_t loginPwd[]  = "98765432109876543210987654321098";
 
 
+uint8_t cclk[] = "AT+CCLK?\r\n";
 uint8_t ipr[] = "AT+IPR=<115200>\r\n";
 uint8_t at[] = "AT\r\n";
 uint8_t read_adc[] = "AT+ZADC?\r\n";
@@ -54,19 +55,22 @@ uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
 
 uint8_t parsing_ip[] = "IPV4:";
 
-uint8_t http_create[] = "AT+EHTTPCREATE=0,39,39,\"\"http://154.8.226.30:52037/\",,,0,,0,,0,\"\r\n";
-//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8099/\",,,0,,0,,0,\"\r\n";
+#if 0
+uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://119.23.146.207:1380/\",,,0,,0,,0,\"\r\n";
+#else
+uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+#endif
 //uint8_t rev_http_create[] = "+EHTTPCREAT:0";
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
 
-uint8_t http_post_bind [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7b226465766963654964223a223741526a6f34713361634e6557544746336d52577358222c226c6f67696e4e616d65223a223132333435363738393031323334353637383930313233343536373839303132222c226c6f67696e507764223a223132333435363738393031323334353637383930313233343536373839303132227d,\"\r\n";
+uint8_t http_post_bind [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C226C6F67696E4E616D65223A223132333435363738393031323334353637383930313233343536373839303132222C226C6F67696E507764223A223132333435363738393031323334353637383930313233343536373839303132227D,\"\r\n";
 
 
-uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=11618.03931&wei=3958.99464&time=034639110119\",0,,0,,0,,\"\r\n";
+uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=00000.00000&wei=0000.00000&time=000000000000\",0,,0,,0,,\"\r\n";
 //uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,"0,0,117,"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=11618.03931&wei=3958.99464&time=034639110119\",0,,0,,0,,\"\r\n";
 //AT+EHTTPSEND=0,118,118,"0,0,99,"/MacGather/submitValue?deviceId=7ARjo4q3acNeWTGF3mRWsX&version=0.000&lng=00000.00000&lat=0000.00000",0,,0,,0,,"
 
-uint8_t http_send0[] = "AT+EHTTPSEND=1,2975,450,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2913,7b226465766963654964223a2256616e6b69612d57502d454346414243314139463234222c2274696d657374616d70223a2231382f31312f30312c31383a35343a3135222c22636f6c6c6563744964223a22434a30303030303030303230222c226c6f6e676974756465223a223131362e333133323838222c226c61746974756465223a2233392e393930373631222c226d61635f737472223a223031303035453746464646412c3031303035453030303046432c4343423841383035363438342c\"\r\n";//388
+uint8_t http_send0[] = "AT+EHTTPSEND=1,2975,450,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2913,7B226465766963654964223A2256616E6B69612D57502D454346414243314139463234222C2274696D657374616D70223A2231382F31312F30312C31383A35343A3135222C22636F6C6C6563744964223A22434A30303030303030303230222C226C6F6E676974756465223A223131362E333133323838222C226C61746974756465223A2233392E393930373631222C226D61635F737472223A223031303035453746464646412C3031303035453030303046432C4343423841383035363438342C\"\r\n";//388
 uint8_t http_send1[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
 uint8_t http_send2[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
 uint8_t http_send3[] = "AT+EHTTPSEND=1,2975,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
@@ -80,7 +84,7 @@ uint8_t http_destroy[] = "AT+EHTTPDESTROY=1\r\n";
 uint8_t probe_flag = 0;
 uint8_t creat_flag = 0;
 //uint8_t send_flag = 0;
-uint16_t gnrmc_gps_flag = 0;
+uint8_t gnrmc_gps_flag = 0;
 at_state_t at_state = 0;
 uint16_t z_adc = 0;
 uint8_t shut_down_flag = 0;
@@ -92,22 +96,27 @@ uint8_t get_tag_flag = 0;
 uint8_t zgmode[] = "AT+ZGMODE=2\r\n";
 uint8_t zgnmea[] = "AT+ZGNMEA=2\r\n";
 uint8_t zgrun[] = "AT+ZGRUN=2\r\n";
-//uint8_t zgstop[] = "AT+ZGRUN=0\r\n";
+uint8_t zgstop[] = "AT+ZGRUN=0\r\n";
 
-uint8_t parameter_deviceId[] = "Vankia-WP-112233445566";
-//uint8_t                   = "vankia-01-68c63a8a2420";
+uint8_t zgdata[] = "AT+ZGDATA \r\n";
+
+
+
+uint8_t parameter_deviceId[] = "Qingzhu-VQ112233445566";
+//                              QZBData
+//uint8_t                    = "vankia-01-68c63a8a2420";
 
 //parameter_longitude=11618.00871;
 //parameter_latitude=3958.98470;
 //parameter_timestamp=034639110119;
-uint8_t parameter_timestamp[] = "034639110119";//都是1,都为0会与tag重叠
+uint8_t parameter_timestamp[] = "111111111111";//都是1,都为0会与tag重叠
 //                              18/11/01,18:54:15
 
 
 uint8_t parameter_tag[] = "000000000000";//CJ,JD
-uint8_t parameter_longitude[] = "11618.00871";
+uint8_t parameter_longitude[] = "00000.00000";
 //                              11618.03708
-uint8_t parameter_latitude[] = "3958.98470";
+uint8_t parameter_latitude[] = "0000.00000";
 //                             3958.98966
 #define JSON_DEVICE_MAC "{\"deviceId\":\"%s\",\"timestamp\":\"%s\",\"collectId\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\",\"mac_str\":\"%s\"}"
 
@@ -290,6 +299,7 @@ create_http(uint8_t times)
         os_printf("send0 %s\n",http_send0);
         at_state = HTTP_SEND;
         break;
+
 
     default:
         break;
@@ -536,13 +546,23 @@ dxx_http_process(char * body, size_t body_len)
 //	}
 //}
 
+void ICACHE_FLASH_ATTR
+check_id(void)
+{
+    //再次获取id
+    queue_uart_send(http_get_tag,os_strlen(http_get_tag));
+    os_printf("send %s\n",http_get_tag);
+    at_state = WAIT;
+}
+
+
 
 void ICACHE_FLASH_ATTR
 uart_receive(const uint8_t * pdata, uint16_t length)
 {
 
     os_timer_disarm(&timer_90s);
-    os_timer_arm(&timer_90s, 30000, 1);//90s后没有收到数据，重启
+    os_timer_arm(&timer_90s, 90000, 1);//90s后没有收到数据，重启
 
 	os_printf("+++++++++++UART Data received+++++++++++++\n");
 	uint8_t end[1] = {'\0'};
@@ -648,8 +668,29 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             }
         }
 
+//        if(os_strstr(uart_receive_at,"ZGDATA: READY"))
+//        {
+//            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//            queue_uart_send(zgrun,os_strlen(zgrun));
+//            os_printf("send %s\n",zgrun);
+//            return;
+//        }
+//
+//        if(os_strstr(uart_receive_at,"ZGDATA: NOT READY"))
+//        {
+//            zgdata[9] = '?';
+//            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//            queue_uart_send(zgdata,os_strlen(zgdata));
+//            os_printf("send %s\n",zgdata);
+//            return;
+//        }
+
+
+
         if(os_strstr(uart_receive_at,"OK"))
         {
+            char * clk_addr = NULL;
+            uint8_t temp_clk[] = "14/09/11,01:54:15";
             os_printf("at_state = %d\n",at_state);
             switch (at_state)
             {
@@ -685,15 +726,44 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                         os_memcpy(http_get_tag + 65, parameter_deviceId, 22);
                         os_printf("deviceid %s\n",parameter_deviceId);
 
-                        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                        queue_uart_send(zgnmea,os_strlen(zgnmea));
-                        os_printf("send %s\n",zgnmea);
-                        at_state = ZGNMEA;
-//                        create_http(0);
 
+
+                        //获取时间
+                        queue_uart_send(cclk,os_strlen(cclk));
+                        os_printf("send %s\n",cclk);
+                        at_state = CCLK;
 
                     }else system_restart();
                 }else delay_power_off();
+                break;
+
+
+            case CCLK:
+
+//                clk_addr = strstr(uart_receive_at,"+CCLK:");
+//                os_memcpy(temp_clk,clk_addr+8,19);
+//                os_printf("temp_clk %s \n",temp_clk);
+//                parameter_timestamp[0] = temp_clk[9];
+//                parameter_timestamp[1] = temp_clk[10];
+//                parameter_timestamp[2] = temp_clk[12];
+//                parameter_timestamp[3] = temp_clk[13];
+//                parameter_timestamp[4] = temp_clk[15];
+//                parameter_timestamp[5] = temp_clk[16];
+//                parameter_timestamp[6] = temp_clk[6];
+//                parameter_timestamp[7] = temp_clk[7];
+//                parameter_timestamp[8] = temp_clk[3];
+//                parameter_timestamp[9] = temp_clk[4];
+//                parameter_timestamp[10] = temp_clk[0];
+//                parameter_timestamp[11] = temp_clk[1];
+                os_printf("clk parameter_timestamp %s \n",parameter_timestamp);
+
+                //等待回应：未绑定/定位错误
+                if(creat_flag == 0)
+                    create_http(0);
+//                //再次获取id
+//                queue_uart_send(http_get_tag,os_strlen(http_get_tag));
+//                os_printf("send %s\n",http_get_tag);
+//                at_state = WAIT;
                 break;
 
             case ZCFUN:
@@ -718,15 +788,21 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 at_state = ZGNMEA;
                 break;
 
+            case ZGSTOP:
+                zgmode[10] = '1';
+                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+                queue_uart_send(zgmode,os_strlen(zgmode));
+                os_printf("send %s\n",zgmode);
+
+
+                break;
+
+
             case ZGNMEA:
                 os_memset(uart_receive_at,'\0',sizeof(char)*2048);
                 queue_uart_send(zgrun,os_strlen(zgrun));
                 os_printf("send %s\n",zgrun);
-//                at_state = ZGRUN;
-//                break;
-//
-//            case ZGRUN:
-////                create_http();
+
                 at_state = NONE;
                 break;
 
@@ -823,12 +899,14 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
         if(os_strstr(uart_receive_at,"+EHTTPNMIC:"))//服务器有响应
         {
-            if(os_strstr(uart_receive_at,"7b22636f6465223a2230222c2264657363223a2273756363657373227d"))
+            if(os_strstr(uart_receive_at,"22636f6465223a2230222c2264657363223a227375636365737322"))
             {
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
                 os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
+                led_state = 5;
+                devicexx_io_led_timer_tick();
 //                send_flag = 0;
                 //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
                 os_memset(uart_receive_at,'\0',sizeof(char)*2048);
@@ -839,20 +917,25 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             }else if(os_strstr(uart_receive_at,"e59cb0e79086e58cbae59f9fe5a496")||os_strstr(uart_receive_at,"e5bd93e5898de697a0e4bbbbe58aa1")||os_strstr(uart_receive_at,"e58f82e695b0e4b8bae7a9ba"))
             {
                 //地理区域外         当前无任务       参数为空
-                delay_power_off();//关机
+                os_timer_disarm(&timer_60s);
+                os_timer_arm(&timer_60s, 6000, 1);
+//                delay_power_off();//关机
             }else if(os_strstr(uart_receive_at,"636f6c6c6563744964"))//获得id
             {
-                uint8_t i;
+                uint8_t i,istime[1],issite[1];
                 uint8_t temp_tag[] = "1234567890123456789012";
-                char * start_addr = NULL;
+                char * cid_addr = NULL;
+
+
 
                 wifi_set_opmode(NULL_MODE);
 
-                start_addr = strstr(uart_receive_at,"22636f6c6c656374496422");//"collectId"
-                os_memcpy(temp_tag,start_addr+26,22);
-
-    //            os_printf("temp_tag %s\n",temp_tag);
-
+                cid_addr = strstr(uart_receive_at,"22636f6c6c656374496422");//"collectId"
+                os_memcpy(temp_tag,cid_addr+26,22);
+                os_memcpy(istime,cid_addr+85,2);
+                os_memcpy(issite,cid_addr+115,2);
+                os_printf("istime %d , issite %d\n",istime[0],issite[0]);
+//22636f6c6c6563744964223a22434a303030303030303034222c226973436f727265637454696d65223a302c2269734c6f636174696f6e223a312c
                 for(i=0;i<22;i++)
                 {
                     if(temp_tag[i]<58)
@@ -873,11 +956,15 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 at_state = NONE;
                 os_printf("tag %s\n",parameter_tag);
 
-                if(0 != os_strcmp(parameter_tag,"00000000000"))//不等于00000000
+                if(0 != os_strcmp(parameter_tag,"00000000000") && istime[0] == 48)//不等于00000000
                 {
                     get_tag_flag = 1;//获得任务ID标志
-
+                    os_timer_disarm(&timer_60s);
+                    queue_uart_send(zgmode,os_strlen(zgmode));
+                    os_printf("send %s\n",zgmode);
+                    at_state = ZGMODE;
                 }
+
                 os_timer_disarm(&timer_90s);
                 os_timer_arm(&timer_90s, 90000, 1);//20s后没有收到数据，重启
 //                queue_uart_send(zgmode,os_strlen(zgmode));
@@ -941,28 +1028,37 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
                 }else//请求任务ID
                 {
+                    os_timer_disarm(&timer_60s);
+                    os_timer_arm(&timer_60s, 6000, 1);
 
                 }
                 return;
             }
 
-            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//设备未使用
+            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//设备未使用：数据库没有这个设备；未绑定：数据库有设备但是为关联代理商
             {
 //                bind_flag = 0;
                 at_state = WAIT;
-                devicexx_io_led_timer_tick(1);
-                devicexx_io_set_led_state(2);
+
+                led_state = 3;
+//                devicexx_io_led_timer_tick();
                 wifi_set_opmode(SOFTAP_MODE);
-                vowstar_set_ssid_prefix("Vankia_WP_");
+                vowstar_set_ssid_prefix("Qingzhu_VQ_");
                 tcp_server();
+
+                os_timer_disarm(&timer_90s);
 
             }else if(os_strstr(uart_receive_at,"e8aebee5a487e5b7b2e7bb91e5ae9a"))//
             {
+                os_timer_disarm(&timer_90s);
+
                 char *binded="设备已绑定,请先解绑";
                 os_memcpy(http_answer+206,binded,19);
 
             }else if(os_strstr(uart_receive_at,"e8b4a6e58fb7e5af86e7a081e4b88de58cb9e9858d"))//账号密码不匹配
             {
+                os_timer_disarm(&timer_90s);
+
                 char *not_match="账号密码不匹配";
                 os_memcpy(http_answer+206,not_match,14);
                 os_printf("http_head = %s\n",http_answer);
@@ -971,8 +1067,8 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 char *bind_success="设备绑定成功";
                 os_memcpy(http_answer+206,bind_success,12);
                 os_printf("http_head = %s\n",http_answer);
-
-
+                led_state = 5;
+//                devicexx_io_led_timer_tick();
                 //再次获取id
                 queue_uart_send(http_get_tag,os_strlen(http_get_tag));
                 os_printf("send %s\n",http_get_tag);
@@ -1025,7 +1121,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             {
                 GPIO_OUTPUT_SET(PIN_GPS_S, 0);
                 os_printf("receive %s\n",uart_receive_at);
-
+//临时
                 os_memcpy(parameter_longitude,uart_receive_at + 32, os_strlen(parameter_longitude));
                 os_memcpy(parameter_latitude, uart_receive_at + 19 , os_strlen(parameter_latitude));
 
@@ -1035,28 +1131,20 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_memcpy(parameter_timestamp, uart_receive_at + 7 , 6);
                 os_memcpy(parameter_timestamp+6, uart_receive_at + 53 ,6);
                 os_memcpy(http_get_tag + 138, parameter_timestamp , 12);
-                os_printf("parameter_longitude=%s\nparameter_latitude=%s\nparameter_timestamp=%s\n",parameter_longitude,parameter_latitude,parameter_timestamp);
 
 
+                os_printf("parameter_longitude=%s\nparameter_latitude=%s\nparameter_timestamp=%s\ncreat_flag=%d\n"
+                                        ,parameter_longitude,parameter_latitude,parameter_timestamp,creat_flag);
 
-
-                if(creat_flag == 0)
-                    create_http(0);
+//                if(creat_flag == 0)
+//                    create_http(0);
 //                else
 //                {
-//                    if(send_flag == 0 )
-//                    {
-//                        get_tag_flag  = 1;
-//        //                bind_flag = 1;
-////                        led_state = 5;
-////                        probe_flag = 1;
-////                        gnrmc_gps_flag = 0;
-////                        sniffer_init();
-////                        sniffer_init_in_system_init_done();
-////                        send_flag = 1;
-//                    }
+//                    //再次获取id
+//                    queue_uart_send(http_get_tag,os_strlen(http_get_tag));
+//                    os_printf("send %s\n",http_get_tag);
+//                    at_state = WAIT;
 //                }
-
 
 
             }else
@@ -1070,21 +1158,25 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             }
 
             os_printf("at_state = %d,gnrmc_gps_flag = %d\n",at_state,gnrmc_gps_flag);
-            if(get_tag_flag == 1 && gnrmc_gps_flag > 30)
+            if(get_tag_flag == 1 && gnrmc_gps_flag > 60)
             {
 
-                led_state = 5;
+                led_state = 1;
+                devicexx_io_led_timer_tick();
                 probe_flag = 1;
                 gnrmc_gps_flag = 0;
-                devicexx_io_led_timer_tick();
+
                 sniffer_init();
                 sniffer_init_in_system_init_done();
             }
 
-            if(gnrmc_gps_flag > 1200)//20分钟无定位，重启一次
+            if(gnrmc_gps_flag > 120)//2分钟无定位，启用wifi基站定位
             {
-                os_timer_disarm(&timer_90s);
-                os_timer_arm(&timer_90s, 90000, 1);
+                gnrmc_gps_flag = 0;
+                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+                queue_uart_send(zgstop,os_strlen(zgstop));
+                os_printf("send %s\n",zgstop);
+                at_state = ZGSTOP;
             }
 
         }

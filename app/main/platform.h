@@ -13,6 +13,7 @@
 void platform_init(void);
 
 extern os_timer_t timer_3S;
+extern os_timer_t timer_60s;
 extern os_timer_t timer_90s;
 
 
