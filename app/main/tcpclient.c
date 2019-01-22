@@ -325,8 +325,10 @@ Check_WifiState(void) {
 		req = NULL;
 
 	}else
+	{
 	    wifi_state++;
-	if(wifi_state == 20)
+	}
+	if(wifi_state == 180)
 	{
 	    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 	    wifi_state = 0;
@@ -336,13 +338,13 @@ Check_WifiState(void) {
 void ICACHE_FLASH_ATTR
 tcp_client_init(uint8_t ssid[32], uint8_t pwd[32])	//初始化
 {
-
-	wifi_set_opmode(0x01);	//设置为STATION模式
-
 	os_strcpy(stationConf.ssid, ssid);	  //改成你自己的   路由器的用户名
 	os_strcpy(stationConf.password, pwd); //改成你自己的   路由器的密码
-
-	wifi_station_set_config_current(&stationConf);	//设置WiFi station接口配置，不保存到 flash
+    os_printf(" ssid %s\n password %s\n",stationConf.ssid,stationConf.password);
+//	wifi_station_set_config_current(&stationConf);	//设置WiFi station接口配置，不保存到 flash
+//    注意不能使用上一句，我出现连接不上路由器情况
+	wifi_station_set_config(&stationConf);  //设置WiFi station接口配置，并保存到 flash
+    wifi_set_opmode(STATION_MODE);  //设置为STATION模式
 	wifi_station_connect();	//连接路由器
 
 //	upgrade_tcp = 1;

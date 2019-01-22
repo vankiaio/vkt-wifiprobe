@@ -30,6 +30,7 @@ os_timer_t timer_3S;
 os_timer_t timer_4S;
 os_timer_t timer_90s;
 os_timer_t timer_60s;
+os_timer_t timer_300s;
 
 void ICACHE_FLASH_ATTR
 delay_power_on()
@@ -62,6 +63,8 @@ platform_init(void)
     os_timer_disarm(&timer_60s);
     os_timer_setfn(&timer_60s, (os_timer_func_t *)check_id, NULL);
 
+//    os_timer_disarm(&timer_300s);
+//    os_timer_setfn(&timer_300s, (os_timer_func_t *)check_gps, NULL);
 
     os_timer_disarm(&timer_90s);//20S没有收到数据，重新上电
     os_timer_setfn(&timer_90s, (os_timer_func_t *)delay_power_on, NULL);
