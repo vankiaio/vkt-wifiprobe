@@ -72,6 +72,7 @@ void ICACHE_FLASH_ATTR system_init_done()
     // Set color to normal
     os_printf(KNRM);
     // Init platform
+
     platform_init();
 
 }
@@ -104,7 +105,7 @@ ICACHE_FLASH_ATTR void main(int argc, char *argv[])
     os_delay_us(100);
 
     // Set Wi-Fi mode
-//    wifi_set_opmode(SOFTAP_MODE);//STATIONAP_MODE
+    wifi_set_opmode(NULL_MODE);//STATIONAP_MODE
 //    vowstar_set_ssid_prefix("Vankia_WP_");
     //    user_set_softap_config();
     system_init_done_cb(system_init_done);

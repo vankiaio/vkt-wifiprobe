@@ -12,6 +12,7 @@
 //#include "at_custom.h"
 
 os_timer_t checkTimer_wifistate;
+os_timer_t timeout_timer;
 ip_addr_t esp_server_ip;
 struct espconn tcpserver;
 struct station_config stationConf;
@@ -61,10 +62,11 @@ uint8_t http_head[] = {
    "img{width: 100%;display: block;}"\
    "</style>"\
    "<body>"\
-   "<form action=\"\" method=\"post\">"\
-   "<input type=\"text\" id=\"loginName\"  placeholder=\"请输入您的用户名\"><br/>"\
-   "<input type=\"password\" id=\"loginPwd\"  placeholder=\"请输入您的密码\"><br/>"\
-   "<button type=\"button\" id=\"loginbtn\" >绑定</button>"
+   "<form action=\"\" method=\"post\" style=\"width:100%;text-align:center;margin-top: 10%;\">"\
+   "<h3><span style=\"color:BlueViolet\">清竹大数据</span>SmartBox</h3>"
+   "<input type=\"text\" id=\"loginName\"  placeholder=\"请输入您的用户名\" style=\"width:200px;height:30px\"><br/></br>"\
+   "<input type=\"password\" id=\"loginPwd\"  placeholder=\"请输入您的密码\" style=\"width:200px;height:30px\"><br/></br>"\
+   "<button type=\"button\" id=\"loginbtn\" style=\"width:100px;height:30px\">绑定</button>"
    "<div id='tip'>                     </div>"\
    "</form>"\
    "<script language=\"javascript\">"\
@@ -138,6 +140,14 @@ uint8_t http_response[] = {
 
 
 void ICACHE_FLASH_ATTR
+bind_timeout(void)
+{
+    char *not_match="连接超时";
+    os_memcpy(http_answer+206,not_match,8);
+//    os_printf("http_head = %s\n",http_answer);
+}
+
+void ICACHE_FLASH_ATTR
 tcpserver_recon_cb(void *arg, sint8 errType)//异常断开回调
 {
     struct espconn *pespconn = (struct espconn *)arg;
@@ -166,6 +176,7 @@ tcpclient_sent_cb(void *arg)//发送回调
     }
     os_printf("\r\n发送回调");
 }
+
 
 
 
@@ -217,6 +228,10 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
         if(http_flg != NULL){
             os_printf("发现 getAnswer\n");
             char *default_str="answer        ";
+
+            os_timer_disarm(&timeout_timer); //取消定时器定时
+            os_timer_setfn(&timeout_timer, (os_timer_func_t *) bind_timeout, NULL);   //设置定时器回调函数
+            os_timer_arm(&timeout_timer, 10000, 0);   //启动定时器，单位：毫秒
 
             espconn_send(pespconn,http_answer,sizeof(http_answer));
 

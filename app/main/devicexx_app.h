@@ -61,6 +61,7 @@ void power_on(void);
 void update_post_bind(void);
 void check_id(void);
 void check_gps(void);
+void nbiot_http_post(void);
 // Save user data to last 15, 14, 13 sector of flash
 #define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
 
