@@ -46,9 +46,10 @@ devicexx_io_led_timer_tick()
     os_timer_setfn(&devicexx_io_led_timer, (os_timer_func_t *)devicexx_io_led_timer_tick, NULL);
 
     state = ~ state;
+#ifdef OLED_VERSION
+#else
     switch (led_state) {
-
-    case 1:        
+    case 1:
         GPIO_OUTPUT_SET(PIN_LED_S, state);
         os_timer_arm(&devicexx_io_led_timer, 800, 1);
 //        os_printf("1,500 \n");
@@ -76,6 +77,7 @@ devicexx_io_led_timer_tick()
         os_timer_arm(&devicexx_io_led_timer, 500, 1);
         break;
     }
+#endif
 }
 
 /******************************************************************************
@@ -284,6 +286,16 @@ devicexx_key_super_press(bool key_up)
 LOCAL void ICACHE_FLASH_ATTR
 devicexx_led_init(void)
 {
+
+#ifdef OLED_VERSION
+    PIN_FUNC_SELECT(pin_name[OLED_POWER], pin_func[OLED_POWER]);
+    PIN_FUNC_SELECT(pin_name[PIN_POWER], pin_func[PIN_POWER]);
+
+    GPIO_OUTPUT_SET(OLED_POWER, 1);
+    os_printf("oled_power on\n");
+    GPIO_OUTPUT_SET(PIN_POWER, 1);
+
+#else
 //    PIN_FUNC_SELECT(pin_name[PIN_LED], pin_func[PIN_LED]);
     PIN_FUNC_SELECT(pin_name[PIN_LED_S], pin_func[PIN_LED_S]);
     PIN_FUNC_SELECT(pin_name[PIN_GPS_S], pin_func[PIN_GPS_S]);
@@ -292,7 +304,7 @@ devicexx_led_init(void)
     GPIO_OUTPUT_SET(PIN_LED_S, 0);
     GPIO_OUTPUT_SET(PIN_GPS_S, 1);
     GPIO_OUTPUT_SET(PIN_POWER, 1);
-
+#endif
 }
 
 /******************************************************************************
@@ -320,7 +332,8 @@ void ICACHE_FLASH_ATTR
 devicexx_io_init(void)
 {
     devicexx_led_init();
-//    devicexx_relay_init();
-//    devicexx_key_init();
+#ifdef OLED_VERSION
+#else
     devicexx_io_led_timer_tick();
+#endif
 }

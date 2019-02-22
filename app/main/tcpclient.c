@@ -12,7 +12,7 @@
 //#include "at_custom.h"
 
 os_timer_t checkTimer_wifistate;
-os_timer_t timeout_timer;
+
 ip_addr_t esp_server_ip;
 struct espconn tcpserver;
 struct station_config stationConf;
@@ -139,13 +139,6 @@ uint8_t http_response[] = {
 };
 
 
-void ICACHE_FLASH_ATTR
-bind_timeout(void)
-{
-    char *not_match="连接超时";
-    os_memcpy(http_answer+206,not_match,8);
-//    os_printf("http_head = %s\n",http_answer);
-}
 
 void ICACHE_FLASH_ATTR
 tcpserver_recon_cb(void *arg, sint8 errType)//异常断开回调
@@ -176,7 +169,6 @@ tcpclient_sent_cb(void *arg)//发送回调
     }
     os_printf("\r\n发送回调");
 }
-
 
 
 
@@ -228,10 +220,6 @@ tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
         if(http_flg != NULL){
             os_printf("发现 getAnswer\n");
             char *default_str="answer        ";
-
-            os_timer_disarm(&timeout_timer); //取消定时器定时
-            os_timer_setfn(&timeout_timer, (os_timer_func_t *) bind_timeout, NULL);   //设置定时器回调函数
-            os_timer_arm(&timeout_timer, 10000, 0);   //启动定时器，单位：毫秒
 
             espconn_send(pespconn,http_answer,sizeof(http_answer));
 

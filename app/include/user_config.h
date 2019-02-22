@@ -13,10 +13,22 @@
 
 #ifdef PLUG_86
 
-//#define PIN_LED 			12
-#define PIN_LED_S			14
-#define PIN_KEY 			0
+
+
+
+
 #define PIN_POWER           9
+
+
+#ifdef OLED_VERSION
+    #define OLED_POWER          14
+#else
+    #define PIN_LED_S           5
+    #define PIN_GPS_S           10
+    #define PIN_POWER           9
+#endif
+
+
 
 #endif // PLUG_86
 
