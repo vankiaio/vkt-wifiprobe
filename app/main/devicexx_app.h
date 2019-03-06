@@ -58,6 +58,8 @@ extern uint8_t loginPwd[];
 extern uint8_t http_create[];
 extern uint8_t  update_host[128];
 
+extern uint8_t apmac_rssi[6][8];
+
 void ap_str_ascii_str(char * body);
 void power_on(void);
 void update_post_bind(void);

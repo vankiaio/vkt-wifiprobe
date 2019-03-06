@@ -16,7 +16,7 @@ extern os_timer_t timer_3S;
 extern os_timer_t check_id_timer;
 extern os_timer_t restart_nb;
 extern os_timer_t timer_300s;
-
+extern os_timer_t scan_timer;
 
 //#define OLED
 

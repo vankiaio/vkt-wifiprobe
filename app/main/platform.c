@@ -41,6 +41,17 @@ os_timer_t F6x8_timer;
 os_timer_t qingzhu_timer;
 os_timer_t vankia_timer;
 
+
+os_timer_t scan_timer;
+struct scan_config config = { NULL, NULL, 0, 0, 0, 100};
+uint8_t *  ap_str = "000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;";
+struct scan_inf {
+    uint8_t ap_mac_pond[128][6];
+    uint8 rssi[128];
+    uint8 channel[128];
+}scan_inf;
+static
+
 void ICACHE_FLASH_ATTR
 delay_power_on()
 {
@@ -89,6 +100,231 @@ F6x8_logo()
     os_timer_arm(&vankia_timer, 3000, 0);
 }
 
+static void ICACHE_FLASH_ATTR
+scan_done(void *arg, STATUS status)
+{
+    uint8_t i=0,j=0,sum=0;
+    uint8_t temp_pond[8],temp_rssi=99;
+    uint8_t temp_apstr[114];
+//    char temp[128];
+//    uint8 tem_ssid[33];
+    if (status == OK)
+    {
+        j=0;
+        struct bss_info *bss_link = (struct bss_info *)arg;
+        os_printf("status:%d pointer:%p\n", status, arg);
+        while (bss_link != NULL)
+        {
+            scan_inf.rssi[j] = bss_link->rssi*(-1);
+            scan_inf.channel[j] = bss_link->channel;
+            for(i=0;i<6;i++)
+                scan_inf.ap_mac_pond[j][i] = bss_link->bssid[i];
+
+            bss_link = bss_link->next.stqe_next;
+            j++;
+//            os_memset(tem_ssid, 0, 33);
+//            if (os_strlen(bss_link->ssid) <= 32)
+//            {
+//              os_memcpy(tem_ssid, bss_link->ssid, os_strlen(bss_link->ssid));
+//            }
+//            else
+//            {
+//              os_memcpy(tem_ssid, bss_link->ssid, 32);
+//            }
+//
+//            os_sprintf(temp,"+CWLAP:(%d,\"%s\",%d,\""MACSTR"\",%d)\r\n",
+//                       bss_link->authmode, tem_ssid, bss_link->rssi,
+//                       MAC2STR(bss_link->bssid),bss_link->channel);
+//            os_printf("%s",temp);
+        }
+        sum = j;
+
+
+
+//        for(i=0;i<j;i++)
+//        {
+//            os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
+//                       scan_inf.ap_mac_pond[i][0], scan_inf.ap_mac_pond[i][1], scan_inf.ap_mac_pond[i][2],
+//                       scan_inf.ap_mac_pond[i][3], scan_inf.ap_mac_pond[i][4], scan_inf.ap_mac_pond[i][5],
+//                       scan_inf.rssi[i],scan_inf.channel[i] );
+//        }
+    }
+
+    for(i=0;i<sum-1;++i)//n个数,总共需要进行n-1次
+    {                 //n-1个数排完,第一个数一定已经归位
+        //每次会将最大(升序)或最小(降序)放到最后面
+
+        for(j=0;j<sum-i-1;++j)
+        {
+            if(scan_inf.rssi[j]>scan_inf.rssi[j+1])
+            {
+                temp_rssi=scan_inf.rssi[j];
+                temp_pond[0] = scan_inf.ap_mac_pond[j][0];
+                temp_pond[1] = scan_inf.ap_mac_pond[j][1];
+                temp_pond[2] = scan_inf.ap_mac_pond[j][2];
+                temp_pond[3] = scan_inf.ap_mac_pond[j][3];
+                temp_pond[4] = scan_inf.ap_mac_pond[j][4];
+                temp_pond[5] = scan_inf.ap_mac_pond[j][5];
+                temp_pond[7] = scan_inf.channel[j];
+
+                scan_inf.rssi[j]=scan_inf.rssi[j+1];
+                scan_inf.ap_mac_pond[j][0] = scan_inf.ap_mac_pond[j+1][0];
+                scan_inf.ap_mac_pond[j][1] = scan_inf.ap_mac_pond[j+1][1];
+                scan_inf.ap_mac_pond[j][2] = scan_inf.ap_mac_pond[j+1][2];
+                scan_inf.ap_mac_pond[j][3] = scan_inf.ap_mac_pond[j+1][3];
+                scan_inf.ap_mac_pond[j][4] = scan_inf.ap_mac_pond[j+1][4];
+                scan_inf.ap_mac_pond[j][5] = scan_inf.ap_mac_pond[j+1][5];
+                scan_inf.channel[j] = scan_inf.channel[j+1];
+
+
+                scan_inf.rssi[j+1]=temp_rssi;
+                scan_inf.ap_mac_pond[j+1][0] = temp_pond[0];
+                scan_inf.ap_mac_pond[j+1][1] = temp_pond[1];
+                scan_inf.ap_mac_pond[j+1][2] = temp_pond[2];
+                scan_inf.ap_mac_pond[j+1][3] = temp_pond[3];
+                scan_inf.ap_mac_pond[j+1][4] = temp_pond[4];
+                scan_inf.ap_mac_pond[j+1][5] = temp_pond[5];
+                scan_inf.channel[j+1] = temp_pond[7];
+
+            }
+        }
+    }
+
+//    for(i=0;i<sum;i++)
+//    {
+//        os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
+//                   scan_inf.ap_mac_pond[i][0], scan_inf.ap_mac_pond[i][1], scan_inf.ap_mac_pond[i][2],
+//                   scan_inf.ap_mac_pond[i][3], scan_inf.ap_mac_pond[i][4], scan_inf.ap_mac_pond[i][5],
+//                   scan_inf.rssi[i],scan_inf.channel[i] );
+//    }
+
+    for ( i = 0; i < 3; i++ )
+    {
+        for ( j = 0; j < sum; j++ )
+        {
+            if (( scan_inf.ap_mac_pond[j][0] == apmac_rssi[i][0])&&
+                 (scan_inf.ap_mac_pond[j][1] == apmac_rssi[i][1])&&
+                 (scan_inf.ap_mac_pond[j][2] == apmac_rssi[i][2])&&
+                 (scan_inf.ap_mac_pond[j][3] == apmac_rssi[i][3])&&
+                 (scan_inf.ap_mac_pond[j][4] == apmac_rssi[i][4])&&
+                 (scan_inf.ap_mac_pond[j][5] == apmac_rssi[i][5]) )
+            {
+//                apmac_rssi[i][6] = scan_inf.rssi[j];
+                os_printf("i=%d\n",i);
+
+                temp_pond[0] =  scan_inf.ap_mac_pond[j][0];
+                temp_pond[1] =  scan_inf.ap_mac_pond[j][1];
+                temp_pond[2] =  scan_inf.ap_mac_pond[j][2];
+                temp_pond[3] =  scan_inf.ap_mac_pond[j][3];
+                temp_pond[4] =  scan_inf.ap_mac_pond[j][4];
+                temp_pond[5] =  scan_inf.ap_mac_pond[j][5];
+                temp_pond[6] =  scan_inf.rssi[j];
+                temp_pond[7] =  scan_inf.channel[j];
+
+
+                scan_inf.ap_mac_pond[j][0] = scan_inf.ap_mac_pond[i][0];
+                scan_inf.ap_mac_pond[j][1] = scan_inf.ap_mac_pond[i][1];
+                scan_inf.ap_mac_pond[j][2] = scan_inf.ap_mac_pond[i][2];
+                scan_inf.ap_mac_pond[j][3] = scan_inf.ap_mac_pond[i][3];
+                scan_inf.ap_mac_pond[j][4] = scan_inf.ap_mac_pond[i][4];
+                scan_inf.ap_mac_pond[j][5] = scan_inf.ap_mac_pond[i][5];
+                scan_inf.rssi[j]    = scan_inf.rssi[i];
+                scan_inf.channel[j] = scan_inf.channel[i];
+
+                scan_inf.ap_mac_pond[i][0] = temp_pond[0];
+                scan_inf.ap_mac_pond[i][1] = temp_pond[1];
+                scan_inf.ap_mac_pond[i][2] = temp_pond[2];
+                scan_inf.ap_mac_pond[i][3] = temp_pond[3];
+                scan_inf.ap_mac_pond[i][4] = temp_pond[4];
+                scan_inf.ap_mac_pond[i][5] = temp_pond[5];
+                scan_inf.rssi[i]    = temp_pond[6];
+                scan_inf.channel[i] = temp_pond[7];
+
+                break;
+            }
+        }
+    }
+
+//    for(i=0;i<sum;i++)
+//    {
+//    os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
+//               scan_inf.ap_mac_pond[i][0], scan_inf.ap_mac_pond[i][1], scan_inf.ap_mac_pond[i][2],
+//               scan_inf.ap_mac_pond[i][3], scan_inf.ap_mac_pond[i][4], scan_inf.ap_mac_pond[i][5],
+//               scan_inf.rssi[i],scan_inf.channel[i] );
+//    }
+    for(i=0;i<6;i++)
+    {
+        apmac_rssi[i][0] = scan_inf.ap_mac_pond[i][0];
+        apmac_rssi[i][1] = scan_inf.ap_mac_pond[i][1];
+        apmac_rssi[i][2] = scan_inf.ap_mac_pond[i][2];
+        apmac_rssi[i][3] = scan_inf.ap_mac_pond[i][3];
+        apmac_rssi[i][4] = scan_inf.ap_mac_pond[i][4];
+        apmac_rssi[i][5] = scan_inf.ap_mac_pond[i][5];
+        apmac_rssi[i][6] = scan_inf.rssi[i];
+        apmac_rssi[i][7] = scan_inf.channel[i];
+
+        os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
+                   apmac_rssi[i][0], apmac_rssi[i][1], apmac_rssi[i][2],
+                   apmac_rssi[i][3], apmac_rssi[i][4], apmac_rssi[i][5],
+                   apmac_rssi[i][6],apmac_rssi[i][7] );
+//        os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
+//                   scan_inf.ap_mac_pond[i][0], scan_inf.ap_mac_pond[i][1], scan_inf.ap_mac_pond[i][2],
+//                   scan_inf.ap_mac_pond[i][3], scan_inf.ap_mac_pond[i][4], scan_inf.ap_mac_pond[i][5],
+//                   scan_inf.rssi[i],scan_inf.channel[i] );
+    }
+
+
+
+    for ( j = 0; j < 6; j++ )
+    {
+        for ( i = 0; i < 12; i++ )
+        {
+            temp_apstr[i+j*18]      = (apmac_rssi[j][i/2] >> 4) & 0xf;
+            temp_apstr[i+1+j*18]    =  apmac_rssi[j][i/2] & 0xf;
+            i++;
+        }
+
+        temp_apstr[i+j*18]      =  apmac_rssi[j][i/2]/10;
+        temp_apstr[i+1+j*18]    =  apmac_rssi[j][i/2]%10;
+        i=i+2;
+        temp_apstr[i+j*18]   =  2;//手动添加2和4
+        temp_apstr[i+1+j*18] =  4;
+        i=i+2;                   //跨过2和4
+        temp_apstr[i+j*18]   =  (apmac_rssi[j][(i-2)/2]+1)/2;
+        temp_apstr[i+1+j*18] = ((apmac_rssi[j][(i-2)/2]+1)%2)*5+2;
+
+    }
+
+
+
+
+    for ( i = 0; i < 114; i++ )
+    {
+        if ( temp_apstr[i] < 10 )
+            temp_apstr[i] += 48;
+        else
+            temp_apstr[i] += 55;
+    }
+
+    for ( i = 0; i < 6; i++ )
+    {
+        os_memcpy( ap_str+  i*21, temp_apstr+i*18, 12);
+        os_memcpy( ap_str+13+i*21, temp_apstr+12+i*18, 2);
+        os_memcpy( ap_str+18+i*21, temp_apstr+16+i*18, 2);
+    }
+
+
+    os_printf( "mac string %s\n", ap_str );
+
+    ap_str_ascii_str(ap_str);
+
+}
+
+void ICACHE_FLASH_ATTR
+wifi_scan()
+{
+    wifi_station_scan(&config, scan_done);
+}
 
 void ICACHE_FLASH_ATTR
 platform_init(void)
@@ -141,7 +377,26 @@ platform_init(void)
     gnrmc_gps_flag = 0;
 //    send_flag = 0;
 
+    wifi_set_opmode(STATION_MODE);
+
+    os_timer_disarm(&scan_timer);
+    os_timer_setfn(&scan_timer, (os_timer_func_t *)wifi_scan, NULL);
+
+
+
+//    {//test
+//        uint8_t FixedTime[1] = {0};
+//        char * fid_addr = NULL;
+//        uint8 *ttttt = "+EHTTPNMIC:0,0,166,332,7b22636f6465223a2230222c22636f6c6c6563744964223a22434a303030303030303032222c226973436f727265637454696d65223a2230222c2269734c6f636174696f6e223a2231222c2275726c223a227770757067726164652e64657669636578782e636f6d222c2276657273696f6e223a22302e303030222c2266697865644964223a224744363533353336383437222c226973466978656454696d65223a2230227d";
+//            //03 46 39 11 01 19
+//        fid_addr = strstr(ttttt,"226669786564496422");//"fixedId"
+//        os_memcpy(FixedTime,fid_addr+79,1);
+//        os_printf("isFixedTime %d\n",FixedTime[0]);
+//
+//    }
 
 //    sniffer_init();
 //    sniffer_init_in_system_init_done();
+    get_gps = 0;
+
 }
