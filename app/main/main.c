@@ -56,6 +56,7 @@ user_set_softap_config(void)
 
 void ICACHE_FLASH_ATTR system_init_done()
 {
+//    os_printf("0.000\r\n");
     // Reset linux, MACOS or Windows cygwin terminal
     // Because serial port may lost data when boot, output CRLF.
 

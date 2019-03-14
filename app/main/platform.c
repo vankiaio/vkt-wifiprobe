@@ -41,7 +41,8 @@ os_timer_t F6x8_timer;
 os_timer_t qingzhu_timer;
 os_timer_t vankia_timer;
 
-
+os_timer_t delay_discon_timer;
+os_timer_t delay_update_timer;
 os_timer_t scan_timer;
 struct scan_config config = { NULL, NULL, 0, 0, 0, 100};
 uint8_t *  ap_str = "000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;";
@@ -50,7 +51,7 @@ struct scan_inf {
     uint8 rssi[128];
     uint8 channel[128];
 }scan_inf;
-static
+
 
 void ICACHE_FLASH_ATTR
 delay_power_on()
@@ -65,44 +66,45 @@ delay_power_on()
 
 }
 
-void ICACHE_FLASH_ATTR
-vankia_logo()
-{
-    OLED_CLS();
-  //    显示位图，自左上角0,0，位置分辨率点起，至第128个分辨率点、第8行的右下角，显示图片“”的位图数据
-    OLED_DrawBMP(0, 0, 128, 8, vankia_BMP);
-
-    os_timer_arm(&qingzhu_timer, 1000, 0);
-}
-
-void ICACHE_FLASH_ATTR
-qingzhu_logo()
-{
-    OLED_CLS();
-  //    显示位图，自左上角0,0，位置分辨率点起，至第128个分辨率点、第8行的右下角，显示图片“”的位图数据
-    OLED_DrawBMP(0, 0, 128, 8, qingzhu_BMP);
-
-    os_timer_arm(&F6x8_timer, 1000, 0);
-}
-
-
-
-void ICACHE_FLASH_ATTR
-F6x8_logo()
-{
-    OLED_CLS();
-
-    OLED_ShowStr(0, 0, "1234567890abcdef", 2);
-    OLED_ShowStr(0, 2, "gklmnopqrstuvwxy", 2);
-    OLED_ShowStr(0, 4, "z!@#$%^&*()_+|/.", 2);
-    OLED_ShowStr(0, 6, "ABCDEFGHIGKLMNOP", 2);
-
-    os_timer_arm(&vankia_timer, 3000, 0);
-}
+//void ICACHE_FLASH_ATTR
+//vankia_logo()
+//{
+//    OLED_CLS();
+//  //    显示位图，自左上角0,0，位置分辨率点起，至第128个分辨率点、第8行的右下角，显示图片“”的位图数据
+//    OLED_DrawBMP(0, 0, 128, 8, vankia_BMP);
+//
+//    os_timer_arm(&qingzhu_timer, 1000, 0);
+//}
+//
+//void ICACHE_FLASH_ATTR
+//qingzhu_logo()
+//{
+//    OLED_CLS();
+//  //    显示位图，自左上角0,0，位置分辨率点起，至第128个分辨率点、第8行的右下角，显示图片“”的位图数据
+//    OLED_DrawBMP(0, 0, 128, 8, qingzhu_BMP);
+//
+//    os_timer_arm(&F6x8_timer, 1000, 0);
+//}
+//
+//
+//
+//void ICACHE_FLASH_ATTR
+//F6x8_logo()
+//{
+//    OLED_CLS();
+//
+//    OLED_ShowStr(0, 0, "1234567890abcdef", 2);
+//    OLED_ShowStr(0, 2, "gklmnopqrstuvwxy", 2);
+//    OLED_ShowStr(0, 4, "z!@#$%^&*()_+|/.", 2);
+//    OLED_ShowStr(0, 6, "ABCDEFGHIGKLMNOP", 2);
+//
+//    os_timer_arm(&vankia_timer, 3000, 0);
+//}
 
 static void ICACHE_FLASH_ATTR
 scan_done(void *arg, STATUS status)
 {
+
     uint8_t i=0,j=0,sum=0;
     uint8_t temp_pond[8],temp_rssi=99;
     uint8_t temp_apstr[114];
@@ -316,6 +318,7 @@ scan_done(void *arg, STATUS status)
 
     os_printf( "mac string %s\n", ap_str );
 
+
     ap_str_ascii_str(ap_str);
 
 }
@@ -382,19 +385,21 @@ platform_init(void)
     os_timer_disarm(&scan_timer);
     os_timer_setfn(&scan_timer, (os_timer_func_t *)wifi_scan, NULL);
 
+    os_timer_disarm(&delay_update_timer);
+    os_timer_setfn(&delay_update_timer, (os_timer_func_t *)update_data, NULL);
 
-
+    os_timer_disarm(&delay_discon_timer);
+    os_timer_setfn(&delay_discon_timer, (os_timer_func_t *)http_disc, NULL);
 //    {//test
-//        uint8_t FixedTime[1] = {0};
+//        uint16_t i;
 //        char * fid_addr = NULL;
-//        uint8 *ttttt = "+EHTTPNMIC:0,0,166,332,7b22636f6465223a2230222c22636f6c6c6563744964223a22434a303030303030303032222c226973436f727265637454696d65223a2230222c2269734c6f636174696f6e223a2231222c2275726c223a227770757067726164652e64657669636578782e636f6d222c2276657273696f6e223a22302e303030222c2266697865644964223a224744363533353336383437222c226973466978656454696d65223a2230227d";
+//        uint8_t http_get_tag1 [] = "AT+EHTTPSEND=0,312,312,\"0,1,21,\"/MacGather/getCollect\",0,,16,\"application/json\",233,7b226465766963654964223a2251696e677a68752d5651303030303030303030303030222c2276657273696f6e223a22302e303030222c22776569223a22303030302e3030303030222c226c6e67223a2230303030302e3030303030222c2274696d65223a22303030303030303030303030227d,\"\r\n";
 //            //03 46 39 11 01 19
-//        fid_addr = strstr(ttttt,"226669786564496422");//"fixedId"
-//        os_memcpy(FixedTime,fid_addr+79,1);
-//        os_printf("isFixedTime %d\n",FixedTime[0]);
-//
+//    	for(i=0;i<os_strlen(http_get_tag1);i++)
+//    	{
+//    		os_printf("http_get_tag1[%3d]=%c\n",i ,http_get_tag1[i]);
+//    	}
 //    }
-
 //    sniffer_init();
 //    sniffer_init_in_system_init_done();
     get_gps = 0;

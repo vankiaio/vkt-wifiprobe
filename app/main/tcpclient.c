@@ -304,7 +304,7 @@ Check_WifiState(void) {
 		os_timer_disarm(&checkTimer_wifistate);
 
 //		ota_start_upgrade(remote_ip, 80, "");
-
+//		os_memcpy(update_host,"wpupgrade.devicexx.com");
 		HTTPCLIENT_DEBUG("DNS request\n");
 		request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
 		req->hostname         = strdup(update_host);
@@ -330,9 +330,11 @@ Check_WifiState(void) {
 	}else
 	{
 	    wifi_state++;
+	    os_printf("wifi_state %d\n",wifi_state);
 	}
-	if(wifi_state == 180)
+	if(wifi_state > 115)
 	{
+	    wifi_set_opmode(NULL_MODE);  //设置为STATION模式
 	    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 	    wifi_state = 0;
 	}

@@ -17,7 +17,7 @@ extern uint8_t http_answer[];
 extern uint8_t upgrade_tcp;
 extern uint8_t http_head[];
 extern uint8_t http_data[];
-
+extern uint8_t wifi_state;
 void tcp_server(void);
 void tcp_client_init(uint8_t ssid[32], uint8_t pwd[32]);
 

@@ -1,3 +1,5 @@
+
+
 /******************************************************************************
  * Copyright 2015 Vowstar Co., Ltd.
  *
@@ -30,6 +32,7 @@
 
 os_timer_t upload_data;
 os_timer_t bind_timeout;
+uint8_t update_reboot = 0;
 
 
 #define VOWSTAR_WAN_DEBUG(format, ...) os_printf(format, ##__VA_ARGS__)
@@ -41,6 +44,9 @@ uint8_t send_order = 0;
 uint8_t http_dis = 0;
 uint8_t isFixedTime[1] ;
 
+uint8_t version_type;
+uint16_t version_num;
+//uint8_t http_create[80]={0};
 
 uint8_t loginName[] = "12345678901234567890123456789012";
 uint8_t loginPwd[]  = "98765432109876543210987654321098";
@@ -60,15 +66,14 @@ uint8_t at_cfun[] = "AT+CFUN=0\r\n";
 uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
 //uint8_t rx_fifo[2048];
 
-uint8_t parsing_ip[] = "IPV4:";
 
-#if 0
-uint8_t http_create[] = "AT+EHTTPCREATE=0,37,37,\"\"http://119.23.130.53:80/\",,,0,,0,,0,\"\r\n";
-#else
+//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+
 uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://47.105.207.228:8098/\",,,0,,0,,0,\"\r\n";
-//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8088/\",,,0,,0,,0,\"\r\n";
-#endif
-//uint8_t rev_http_create[] = "+EHTTPCREAT:0";
+
+//uint8_t edns[] = "AT+EDNS=\"wpupgrade.devicexx.com\"\r\n";//
+//uint8_t edns[] = "AT+EDNS=\"bc.qzbdata.com\"\r\n";//  清竹大数据 域名
+
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
 
 uint8_t http_post_apmac [] = "AT+EHTTPSEND=0,326,326,\"0,1,14,\"/location/wifi\",0,,16,\"application/json\",273,7B226D6163223a223030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B227D,\"\r\n";
@@ -76,17 +81,9 @@ uint8_t http_post_apmac [] = "AT+EHTTPSEND=0,326,326,\"0,1,14,\"/location/wifi\"
 uint8_t http_post_bind  [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C226C6F67696E4E616D65223A223132333435363738393031323334353637383930313233343536373839303132222C226C6F67696E507764223A223132333435363738393031323334353637383930313233343536373839303132227D,\"\r\n";
 
 
-uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Vankia-WP-112233445566&version=0.000&lng=00000.00000&wei=0000.00000&time=000000000000\",0,,0,,0,,\"\r\n";
-
-
-//uint8_t http_send0[] = "AT+EHTTPSEND=1,2967,442,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2905,7b226465766963654964223a2251696e677a68752d5651454346414243314139463137222c2274696d657374616d70223a22303030303030303030303030222c22636f6c6c6563744964223a223030303030303030303030222c226c6f6e676974756465223a2230303030302e3030303030222c226c61746974756465223a22303030302e3030303030222c226d61635f737472223a223030303030303030303030302c3030303030303030303030302c3030303030303030303030302c\"\r\n";//388
-//uint8_t http_send1[] = "AT+EHTTPSEND=1,2967,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-//uint8_t http_send2[] = "AT+EHTTPSEND=1,2967,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-//uint8_t http_send3[] = "AT+EHTTPSEND=1,2967,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-//uint8_t http_send4[] = "AT+EHTTPSEND=1,2967,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-//uint8_t http_send5[] = "AT+EHTTPSEND=1,2967,494,\"3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C3131323233333434353536362C\"\r\n";
-//uint8_t http_send6[] = "AT+EHTTPSEND=0,2967,55,\"3131323233333434353536362C313132323333343435353636227d,\"\r\n";
-
+//uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Qingzhu-VQECFABC1A9F16&version=0.000&lng=00000.00000&wei=0000.00000&time=000000000000\",0,,0,,0,,\"\r\n";
+uint8_t http_get_tag [] = "AT+EHTTPSEND=0,293,293,\"0,1,21,\"/MacGather/getCollect\",0,,16,\"application/json\",233,7b226465766963654964223a2251696e677a68752d5651303030303030303030303030222c2276657273696f6e223a22302e303030222c22776569223a22303030302e3030303030222c226c6e67223a2230303030302e3030303030222c2274696d65223a22303030303030303030303030227d,\"\r\n";
+                                                                                                                  // { " d e v i c e I d " : " Q i n g z h u - V Q 0 0 0 0 0 0 0 0 0 0 0 0 " , " v e r s i o n " : " 0 . 0 0 0 " , " w e i " : " 0 0 0 0 . 0 0 0 0 0 " , " l n g " : " 0 0 0 0 0 . 0 0 0 0 0 " , " t i m e " : " 0 0 0 0 0 0 0 0 0 0 0 0 " }
                                                                                                              //2953
 uint8_t http_send0[] = "AT+EHTTPSEND=1,2967,442,\"0,1,22,\"/MacGather/submitValue\",0,,16,\"application/json\",2905,7b226465766963654964223a2251696e677a68752d5651454346414243314139463137222c2274696d657374616d70223a22303030303030303030303030222c22636f6c6c6563744964223a223030303030303030303030222c226c6f6e676974756465223a2230303030302e3030303030222c226c61746974756465223a22303030302e3030303030222c226d61635f737472223a223030303030303030303030302c3030303030303030303030302c3030303030303030303030302c\"\r\n";//388
 uint8_t http_send1[] = "AT+EHTTPSEND=1,2967,494,\"3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C\"\r\n";
@@ -96,8 +93,7 @@ uint8_t http_send4[] = "AT+EHTTPSEND=1,2967,494,\"3030303030303030303030302C3030
 uint8_t http_send5[] = "AT+EHTTPSEND=1,2967,494,\"3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C3030303030303030303030302C\"\r\n";
 uint8_t http_send6[] = "AT+EHTTPSEND=0,2967,55,\"3030303030303030303030302C303030303030303030303030227d,\"\r\n";
 uint8_t http_send7[] = "AT+EHTTPSEND=0,3015,103,\"3030303030303030303030302c303030303030303030303030222c2266697865644964223a224744303030303030303030227d,\"\r\n";
-//                  2967->3016
-//                      AT+EHTTPSEND=0,3015,103," 3030303030303030303030302C303030303030303030303030222c2266697865644964223a224744363533353336383437227d,"
+
 
 uint8_t http_discon[] = "AT+EHTTPDISCON=0\r\n";
 uint8_t http_destroy[] = "AT+EHTTPDESTROY=1\r\n";
@@ -162,18 +158,21 @@ ota_finished_callback(void *arg)
     struct upgrade_server_info *update = arg;
         if (update->upgrade_flag == true)
         {
-
-        	devicexx_app_save();
+            update_reboot = 1;
+            delay_power_on();
             os_printf("OTA  Success ! rebooting!\n");
+            local_system_status.version_num = version_num;
+        	devicexx_app_save();
 
-            system_upgrade_reboot();
+
+
         }else
         {
+            update_reboot = 0;
             os_printf("OTA failed!\n");
-//            upgrade_tcp = 0;
-            Check_WifiState();
 
-//            os_timer_arm(&timer_3S, 3000, 0);//开机
+            delay_power_on();
+
         }
 }
 
@@ -184,7 +183,8 @@ ota_start_upgrade(const char *server_ip, uint16_t port,const char *path)
     char file[16] = "user0.0.000.bin";
     //获取系统的目前加载的是哪个bin文件
     uint8_t userBin = system_upgrade_userbin_check();
-
+    //0：user1  1:user2
+    os_printf("userbin = %d\n",userBin);
     switch (userBin) {
 
     //如果检查当前的是处于user1的加载文件，那么拉取的就是user2.bin
@@ -204,10 +204,12 @@ ota_start_upgrade(const char *server_ip, uint16_t port,const char *path)
     }
 
 
-    file[6] = local_system_status.version_type + 48;
-    file[8] = local_system_status.version_num/100 + 48;
-    file[9] = local_system_status.version_num%100/10 + 48;
-    file[10] = local_system_status.version_num%100%10 + 48;
+    file[6] = version_type + 48;
+    file[8] = version_num/100 + 48;
+    file[9] = version_num%100/10 + 48;
+    file[10] = version_num%100%10 + 48;
+
+    os_printf("%c",file[8]);os_printf("%c",file[9]);os_printf("%c",file[10]);
 
     struct upgrade_server_info* update =
             (struct upgrade_server_info *) os_zalloc(sizeof(struct upgrade_server_info));
@@ -265,7 +267,15 @@ power_on()
         system_deep_sleep_set_option(1);
         system_deep_sleep(0);
     }else
-        system_restart();
+    {
+        if(update_reboot == 1)
+        {
+            system_upgrade_reboot();
+            update_reboot = 0;
+        }
+        else
+            system_restart();
+    }
 }
 
 void ICACHE_FLASH_ATTR
@@ -286,21 +296,23 @@ bind_timeout_cb(void)
 {
     char *not_match="连接超时";
     os_memcpy(http_answer+206,not_match,8);
-//    os_printf("http_head = %s\n",http_answer);
+    os_printf("绑定等待超时\n");
 }
 
 
 void ICACHE_FLASH_ATTR
 what_do(uint8_t times)
 {
-    http_dis = 0;
+
     switch (send_order)
     {
 
     case 0:
-        http_get_tag[98] = local_system_status.version_num/100 + 48;
-        http_get_tag[99] = local_system_status.version_num%100/10 + 48;
-        http_get_tag[100]= local_system_status.version_num%100%10 + 48;
+
+        http_get_tag[185] = local_system_status.version_num/100 + 48;
+        http_get_tag[187] = local_system_status.version_num%100/10 + 48;
+        http_get_tag[189]= local_system_status.version_num%100%10 + 48;
+
 
         queue_uart_send(http_get_tag,os_strlen(http_get_tag));
         os_printf("send %s\n",http_get_tag);
@@ -319,15 +331,32 @@ what_do(uint8_t times)
         break;
 
     case 2://发100个mac
-        queue_uart_send(http_send0,os_strlen(http_send0));
-        os_printf("send0 %s\n",http_send0);
-        at_state = HTTP_SEND;
+//        if( 0 == os_strcmp(parameter_longitude,"00000.00000") && 0 == os_strcmp(parameter_latitude,"0000.00000") )
+//        {
+//            at_state = NONE;
+//        }else
+        {
+            queue_uart_send(http_send0,os_strlen(http_send0));
+            os_printf("send0 %s\n",http_send0);
+            at_state = HTTP_SEND;
+        }
         break;
 
     case 3://发6个ap mac
+
+//        uint8_t http_post_apmac_tt [] = "AT+EHTTPSEND=0,326,326,\"0,1,14,\"/location/wifi\",0,,16,\"application/json\",273,7B226D6163223a224534413743353541463530322C35362C323431323B4436314133463242324244312C36392C323436323B3241413032423231343044442C37352C323431323B4538344530363730323243302C38312C323435373B3743373636383638343343302C38322C323433373B4443463039453832414537302C38352C323431323B227D,\"\r\n";
+//        os_memcpy(http_post_apmac,http_post_apmac_tt,os_strlen(http_post_apmac_tt));
         queue_uart_send(http_post_apmac,os_strlen(http_post_apmac));
         os_printf("send %s\n",http_post_apmac);
-        at_state = WAIT;
+
+        at_state = NONE;
+
+        os_timer_disarm(&delay_discon_timer);
+        os_timer_arm(&delay_discon_timer, 20000, 0);//20秒后发送
+
+
+        os_timer_disarm(&delay_update_timer);
+        os_timer_arm(&delay_update_timer, 40000, 0);//20秒后发送
         break;
     case 4://再次获取任务id
         queue_uart_send(http_get_tag,os_strlen(http_get_tag));
@@ -346,15 +375,17 @@ create_http(uint8_t times)
 {
 
     os_timer_disarm(&restart_nb);
-    os_timer_arm(&restart_nb, 305000, 1);//5分钟后没有收到数据，重启
+    os_timer_arm(&restart_nb, 180000, 1);//3分钟后没有收到数据，重启
     send_order = times;
     os_printf("send_order %d\n",send_order);
+    os_printf("http_dis %d\n",http_dis);
 
     if(send_order == 0)
     {
         os_memset(uart_receive_at,'\0',sizeof(char)*2048);
         queue_uart_send(http_create,os_strlen(http_create));
         os_printf("send http_create %s\n",http_create);
+        creat_flag = 1;
     }else
     {
         if(http_dis == 1)
@@ -407,6 +438,66 @@ ap_str_ascii_str(char * body)
 }
 
 
+//
+//cmd 1      2       3    4   5
+//deviceId  version wei lng time
+void ICACHE_FLASH_ATTR
+strhex_to_str(char * strhex, uint8 cmd)
+{
+    uint16_t len = os_strlen(strhex);
+    uint8_t str[len*2];
+    uint16_t i;
+
+
+    for(i=0;i<len*2;i++)
+    {
+        str[i] = (strhex[i/2] >> 4) & 0xf;
+        str[i+1] = strhex[i/2] & 0xf;
+        i++;
+    }
+
+    for(i=0;i<len*2;i++)
+    {
+        if(str[i]<10)
+        {
+            str[i]+= 48;
+        }else
+        {
+            str[i]+= 55;
+        }
+    }
+
+    switch (cmd)
+    {
+		case 1://deviceId
+		{
+			os_memcpy(http_get_tag+110, str,  len*2);
+		}
+		break;
+		case 2://version
+		{
+
+
+
+		}
+		break;
+		case 3://wei
+		{
+			os_memcpy(http_get_tag+208, str,  len*2);
+		}
+		break;
+		case 4://lng
+		{
+			 os_memcpy(http_get_tag+246, str, len*2);
+		}
+		break;
+		case 5://time
+		{
+			 os_memcpy(http_get_tag+288, str, len*2);
+		}
+		break;
+    }
+}
 
 void ICACHE_FLASH_ATTR
 str_ascii_str(char * body)
@@ -485,8 +576,9 @@ str_ascii_str(char * body)
 }
 
 void ICACHE_FLASH_ATTR
-update_data()
+update_data()//上传mac数据
 {
+
     VOWSTAR_WAN_DEBUG("%s: request\r\n", __func__);
     // Build Body's JSON string
     uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_DEVICE_MAC) +
@@ -497,6 +589,7 @@ update_data()
                                            os_strlen(parameter_latitude) +
                                            os_strlen(sta_str)
                                            );
+
     if (body == NULL) {
         VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
         return;
@@ -511,11 +604,13 @@ update_data()
                parameter_latitude,
                sta_str);
 
-    VOWSTAR_WAN_DEBUG("%s: body %s\n", __func__, body);
+//    VOWSTAR_WAN_DEBUG("%s: body %s\n", __func__, body);
     str_ascii_str(body);
     // Free memory
+
     if (body)
         os_free(body);
+
 }
 
 
@@ -617,6 +712,7 @@ update_post_bind()
 void ICACHE_FLASH_ATTR
 nbiot_http_post()
 {
+    os_printf("Gather done\n");
     sni_temp = 0;
     os_timer_disarm(&channelHop_timer);
     wifi_promiscuous_enable(0);
@@ -629,7 +725,8 @@ nbiot_http_post()
     }else
     {
         os_timer_disarm(&scan_timer);
-        os_timer_arm(&scan_timer, 2500, 0);
+        os_timer_arm(&scan_timer, 3000, 0);
+//        update_data();
     }
 
 }
@@ -653,29 +750,6 @@ uart_send(const uint8_t * buffer, uint16_t length)
 	os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
 }
 
-int ICACHE_FLASH_ATTR
-dxx_http_process(char * body, size_t body_len)
-{
-//	if ((NULL != body) && (0 != body_len)) {
-		VOWSTAR_WAN_DEBUG("%s: body size:%d\r\n", __func__, body);
-
-//		if (0 == dxx_message_ckeck_json_object(body, body_len)) {
-		dxx_message_ckeck_json_object(body, body_len);
-			body[body_len] = '\0';
-			VOWSTAR_WAN_DEBUG("%s: body:\r\n", __func__);
-			VOWSTAR_WAN_DEBUG("%s\r\n", body);
-			return 0;
-//		}
-//	}
-}
-//void ICACHE_FLASH_ATTR
-//device_ota_callback(void * ctx, char * response_body, size_t response_body_size, int http_status, char * response_headers)
-//{
-//	os_printf("%s: status:%d\n", __func__, http_status);
-//	if (200 == http_status) {
-//		dxx_http_process(response_body, response_body_size);
-//	}
-//}
 
 void ICACHE_FLASH_ATTR
 check_id(void)
@@ -685,14 +759,27 @@ check_id(void)
 }
 
 void ICACHE_FLASH_ATTR
+http_disc(void)
+{
+    if(http_dis == 0)
+    {
+        queue_uart_send(http_discon,os_strlen(http_discon));
+        os_printf("send %s\n",http_discon);
+        http_dis = 1;
+        at_state = WAIT;
+    }
+}
+
+
+void ICACHE_FLASH_ATTR
 start(void)
 {
     led_state = 1;
-    //                devicexx_io_led_timer_tick();
+    devicexx_io_led_timer_tick();
     probe_flag = 1;
     gnrmc_gps_flag = 0;
 
-    os_timer_disarm(&restart_nb);
+
     sniffer_init();
     sniffer_init_in_system_init_done();
 }
@@ -734,15 +821,14 @@ update_firmware(void)
 {
     uint8_t * version_addr = NULL;
     uint8_t version_temp[11] ;//302e303031
-    uint8_t version_type;
-    uint16_t version_num;
+
 
 
     version_addr = strstr(uart_receive_at,"76657273696f6e");//version
 
     os_memcpy(version_temp,version_addr+20,10);
     version_temp[10] = '\0';
-    os_printf("version_temp %s\n",version_temp);
+    os_printf("version_temp %s\n",&version_temp);
     version_type = version_temp[1]-48;
     version_num = (version_temp[5]-48)*100 + (version_temp[7]-48)*10 + version_temp[9]-48;
     os_printf("version_type %d version_num %d\n",version_type,version_num);
@@ -755,8 +841,8 @@ update_firmware(void)
         uint8_t * url_addr = NULL;
         uint8_t url_len, i;
 
-        local_system_status.version_num = version_num;
-        url_addr = strstr(uart_receive_at,"75726c");//url
+//        local_system_status.version_num = version_num;
+        url_addr = strstr(uart_receive_at,"75726c");//url,缓存服务器返回的URL，存放新固件的服务器
         url_len = version_addr-url_addr-18;
         os_memcpy(url_temp,url_addr+12,url_len);
         url_temp[url_len] = '\0';
@@ -775,7 +861,285 @@ update_firmware(void)
     }
 
 }
+void ICACHE_FLASH_ATTR
+receive_ok(void)
+{
+    switch (at_state)
+    {
+    case LED:
+        //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(read_adc,os_strlen(read_adc));
+        os_printf("send %s\n",read_adc);
+        at_state = ZADC;
+        break;
 
+    case ZADC:  //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
+        z_adc = (uart_receive_at[6]-48)*100+(uart_receive_at[7]-48)*10+uart_receive_at[8]-48;
+        uint8_t src[6], i, mac_address_str[12];
+        if(z_adc>544)
+        {
+            if (wifi_get_macaddr(STATION_IF, src))//获取mac地址
+            {
+                for(i=0; i< 12; i++)
+                {
+                    mac_address_str[i]   = (src[i/2] >> 4) & 0xf;
+                    mac_address_str[i+1] =  src[i/2] & 0xf;
+                    i++;
+                }
+
+                for(i=0; i< 12; i++){
+                    if( mac_address_str[i] < 10)
+                        mac_address_str[i] += 48;
+                    else
+                        mac_address_str[i] += 55;
+                }
+                os_memcpy(parameter_deviceId + 10, mac_address_str, 12);
+
+                os_printf("deviceid %s\n",parameter_deviceId);
+                strhex_to_str(parameter_deviceId,1);
+
+                //获取时间
+                queue_uart_send(cclk,os_strlen(cclk));
+                os_printf("send %s\n",cclk);
+                at_state = CCLK;
+
+            }else system_restart();
+        }else delay_power_off();
+        break;
+
+
+    case CCLK:
+
+        os_printf("clk parameter_timestamp %s \n",parameter_timestamp);
+
+        //等待回应：未绑定/定位错误
+        if(creat_flag == 0)
+            create_http(0);
+        else//再次获取id
+        {
+            create_http(4);
+        }
+        break;
+
+    case ZCFUN:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(e_power_off,os_strlen(e_power_off));
+        os_printf("send %s\n",e_power_off);
+        at_state = ZOFF;
+        break;
+
+    case ZOFF:
+        os_printf("NB turned off, now system turn off\n");
+//            delay_power_on();//关机
+        shut_down_flag = 1;
+//                os_timer_disarm(&temer_90s);
+        power_on();
+        break;
+
+    case ZGMODE:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(zgnmea,os_strlen(zgnmea));
+        os_printf("send %s\n",zgnmea);
+        at_state = ZGNMEA;
+        break;
+
+    case ZGSTOP:
+//                zgmode[10] = '1';
+//                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//                queue_uart_send(zgmode,os_strlen(zgmode));
+//                os_printf("send %s\n",zgmode);
+
+        os_timer_disarm(&restart_nb);
+
+//                start();
+
+        break;
+
+
+    case ZGNMEA:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(zgrun,os_strlen(zgrun));
+        os_printf("send %s\n",zgrun);
+
+        if(http_dis == 0)
+        {
+            queue_uart_send(http_discon,os_strlen(http_discon));
+            os_printf("send %s\n",http_discon);
+            http_dis = 1;
+        }
+
+        start();
+        at_state = NONE;
+        break;
+
+    case HTTP_CON:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        http_dis = 0;
+        what_do(send_order);
+
+
+        break;
+
+    case HTTP_SEND:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(http_send1,os_strlen(http_send1));
+        os_printf("send1 %s\n",http_send1);
+        at_state = HTTP_SEND1;
+        break;
+
+    case HTTP_SEND1:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(http_send2,os_strlen(http_send2));
+        os_printf("send2 %s\n",http_send2);
+        at_state = HTTP_SEND2;
+        break;
+
+    case HTTP_SEND2:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(http_send3,os_strlen(http_send3));
+        os_printf("send3 %s\n",http_send3);
+        at_state = HTTP_SEND3;
+        break;
+
+    case HTTP_SEND3:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(http_send4,os_strlen(http_send4));
+        os_printf("send4 %s\n",http_send4);
+        at_state = HTTP_SEND4;
+        break;
+
+    case HTTP_SEND4:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(http_send5,os_strlen(http_send5));
+        os_printf("send5 %s\n",http_send5);
+        at_state = HTTP_SEND5;
+        break;
+
+    case HTTP_SEND5:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        if(isFixedTime[0] == 48)
+        {
+            queue_uart_send(http_send7,os_strlen(http_send7));
+            os_printf("send6 %s\n",http_send7);
+        }else
+        {
+            queue_uart_send(http_send6,os_strlen(http_send6));
+            os_printf("send6 %s\n",http_send6);
+        }
+
+        os_printf("send done\n");
+        gnrmc_gps_flag = 0;
+        at_state = NONE;
+        break;
+
+    case HTTP_DISCON:
+    case HTTP_DESTROY:
+        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+        queue_uart_send(http_con,os_strlen(http_con));
+        os_printf("send %s\n",http_con);
+        at_state = HTTP_CON;
+        break;
+
+    default:
+        break;
+
+    }
+}
+
+void ICACHE_FLASH_ATTR
+get_indoor_position(void)
+{
+
+    uint8_t i;
+    uint8_t * lon_addr = NULL;
+    uint8_t mmac_str[72];
+
+    lon_addr = strstr(uart_receive_at,"2c226c6f6e22");//lon
+    mmac_str[72]='\0';
+
+    os_memcpy(mmac_str, lon_addr+96 , 72);
+    os_printf("mmac_str %s\n",&mmac_str);
+
+
+
+    os_memcpy(http_get_tag+246, lon_addr+16, 22);
+    os_memcpy(http_get_tag+208, lon_addr+56, 20);
+
+
+    for(i=0;i<72;i++)
+    {
+        mmac_str[i]-=48;
+    }
+
+    for(i=0;i<36;i++)
+    {
+        mmac_str[i]=mmac_str[i*2]*16+mmac_str[i*2+1];
+        if(mmac_str[i]<58)
+            mmac_str[i]-=48;
+        else
+            mmac_str[i]-=55;
+
+    }
+    for(i=0;i<36;i++)
+    {
+        mmac_str[i]=mmac_str[i*2]*16+mmac_str[i*2+1];
+    }
+//                for(i=0;i<18;i++)
+//                    os_printf("mmac_str %x\n",mmac_str[i]);
+
+    for(i=0;i<6;i++)
+    {
+        apmac_rssi[0][i]=mmac_str[i];
+        apmac_rssi[1][i]=mmac_str[i+6];
+        apmac_rssi[2][i]=mmac_str[i+12];
+    }
+    for(i=0;i<3;i++)
+    {
+        os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
+               apmac_rssi[i][0], apmac_rssi[i][1], apmac_rssi[i][2],
+               apmac_rssi[i][3], apmac_rssi[i][4], apmac_rssi[i][5],
+               apmac_rssi[i][6],apmac_rssi[i][7] );
+    }
+    resolution_times();
+
+}
+
+
+
+//void ICACHE_FLASH_ATTR
+//qz_dns(void)//解析清竹域名
+//{
+//    uint8_t total_len,i;
+//    char * ip_addr = NULL;
+//    char * ok_addr = NULL;
+//
+//    uint8_t dns_ip[] = "000.000.000.000";
+//    uint8_t http_create_before_half[] = "AT+EHTTPCREATE=0,40,40,\"\"http://";
+//    uint8_t http_create_after_half[] = ":8098/\",,,0,,0,,0,\"\r\n";
+//
+//    ip_addr = strstr(uart_receive_at,"IPV4:");
+//    ok_addr = strstr(uart_receive_at,"OK");
+//    os_memcpy(dns_ip, ip_addr+5, ok_addr-ip_addr-8);
+//
+//
+//    total_len = ok_addr-ip_addr-9+26;
+//    dns_ip[ok_addr-ip_addr-9]='\0';
+////    for(i=0;i<ok_addr-ip_addr-9;i++)
+////    {
+////        os_printf("dns_ip=%d\n",dns_ip[i]);
+////    }
+//    os_printf("dns_ip=%s=%d\n",&dns_ip,total_len);
+//
+//    http_create_before_half[17] = total_len/10+48;
+//    http_create_before_half[18] = total_len%10+48;
+//    http_create_before_half[20] = http_create_before_half[17];
+//    http_create_before_half[21] = http_create_before_half[18];
+//    os_sprintf(http_create, "%s%s", http_create_before_half, dns_ip);
+//
+//    os_memcpy(http_create+total_len+6,http_create_after_half,21);
+//
+//}
 
 void ICACHE_FLASH_ATTR
 uart_receive(const uint8_t * pdata, uint16_t length)
@@ -784,7 +1148,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
     os_timer_arm(&check_id_timer, 120000, 1);
 
     os_timer_disarm(&restart_nb);
-    os_timer_arm(&restart_nb, 305000, 1);//5分钟后没有收到数据，重启
+    os_timer_arm(&restart_nb, 180000, 1);//3分钟后没有收到数据，重启
 
 	os_printf("+++++++++++UART Data received+++++++++++++\n");
 	uint8_t end[1] = {'\0'};
@@ -806,24 +1170,27 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
         if(os_strstr(uart_receive_at,"+IP:"))
         {
+
+//            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//            queue_uart_send(edns,os_strlen(edns));
+//            os_printf("send %s\n",edns);
+//            at_state = EDNS;
             uint8_t i;
+
             os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-//            queue_uart_send(meng,os_strlen(meng));
-//            os_printf("send %s\n",meng);
             queue_uart_send(con_led,os_strlen(con_led));
             at_state = LED;
             os_printf("send %s\n",con_led);
 
             for(i=0;i<12;i++)
                 parameter_timestamp[i] = '0';
+            return;
         }
 
 
         if(os_strstr(uart_receive_at,"+EHTTPCREAT:"))
         {
             creat_flag = 1;
-    //        http_send0[25] = uart_receive_at[81];
-    //        http_con[12] = uart_receive_at[81];
             if(uart_receive_at[81] == 1)
             {
                 queue_uart_send(http_destroy,os_strlen(http_destroy));
@@ -835,31 +1202,52 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             os_printf("send %s\n",http_con);
             http_dis = 0;
             at_state = HTTP_CON;
+            return;
         }
 
-        if(os_strstr(uart_receive_at,"+EHTTPERR:0"))
+        if(os_strstr(uart_receive_at,"+EHTTPERR:0"))//0是客户端编号
         {
             http_dis = 1;
+            return;
         }
-//        if(os_strstr(uart_receive_at,"+EHTTPERR:0,-2"))
+
+
+
+//        if(os_strstr(uart_receive_at,"IPV4:"))
 //        {
-//            at_state = NONE;
+//            uint8_t i;
+//            qz_dns();
+//
+//
 //            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-//            queue_uart_send(http_con,os_strlen(http_con));
-//            os_printf("http_con %s\n",http_con);
+//            queue_uart_send(con_led,os_strlen(con_led));
+//            at_state = LED;
+//            os_printf("send %s\n",con_led);
+//
+//            for(i=0;i<12;i++)
+//                parameter_timestamp[i] = '0';
+//            return;
 //        }
 
 
-//        if(os_strstr(uart_receive_at,"ERROR"))
-//        {
-//
-//            os_printf("error\n");
-//            os_printf("at_state = %d\n",at_state);
-//            switch (at_state)
-//            {
-//            case ZOFF:
-//                delay_power_off();
+        if(os_strstr(uart_receive_at,"ERROR"))
+        {
+
+            os_printf("error\n");
+            os_printf("at_state = %d\n",at_state);
+            switch (at_state)
+            {
+
+//            case EDNS:
+//                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+//                queue_uart_send(edns,os_strlen(edns));
+//                os_printf("send %s\n",edns);
 //                break;
+
+
+            case ZOFF:
+                delay_power_off();
+                break;
 //
 //            case HTTP_CON:
 ////                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
@@ -868,12 +1256,9 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 ////                at_state = HTTP_DISCON;
 ////                break;
 ////
-////            case HTTP_DISCON:
-////                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-////                queue_uart_send(http_con,os_strlen(http_con));
-////                os_printf("send %s\n",http_con);
-////                at_state = HTTP_DESTROY;
-////                break;
+            case NONE:
+
+                break;
 ////
 ////            case HTTP_DESTROY:
 //                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
@@ -881,200 +1266,18 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 //                os_printf("send %s\n",http_destroy);
 //                at_state = ZGMODE;
 //                break;
-//
-//            default:
-//                break;
-//            }
-//        }
 
-
-
+            default:
+                delay_power_on();
+                break;
+            }
+        }
 
         if(os_strstr(uart_receive_at,"OK"))
         {
-            char * clk_addr = NULL;
-            uint8_t temp_clk[] = "14/09/11,01:54:15";
+
             os_printf("at_state = %d\n",at_state);
-            switch (at_state)
-            {
-            case LED:
-                //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(read_adc,os_strlen(read_adc));
-                os_printf("send %s\n",read_adc);
-                at_state = ZADC;
-                break;
-
-            case ZADC:  //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
-                z_adc = (uart_receive_at[6]-48)*100+(uart_receive_at[7]-48)*10+uart_receive_at[8]-48;
-                uint8_t src[6], i, mac_address_str[12];
-                if(z_adc>544)
-                {
-                    if (wifi_get_macaddr(STATION_IF, src))//获取mac地址
-                    {
-                        for(i=0; i< 12; i++)
-                        {
-                            mac_address_str[i]   = (src[i/2] >> 4) & 0xf;
-                            mac_address_str[i+1] =  src[i/2] & 0xf;
-                            i++;
-                        }
-
-                        for(i=0; i< 12; i++){
-                            if( mac_address_str[i] < 10)
-                                mac_address_str[i] += 48;
-                            else
-                                mac_address_str[i] += 55;
-                        }
-                        os_memcpy(parameter_deviceId + 10, mac_address_str, 12);
-                        os_memcpy(http_get_tag + 65, parameter_deviceId, 22);
-                        os_printf("deviceid %s\n",parameter_deviceId);
-
-
-
-                        //获取时间
-                        queue_uart_send(cclk,os_strlen(cclk));
-                        os_printf("send %s\n",cclk);
-                        at_state = CCLK;
-
-                    }else system_restart();
-                }else delay_power_off();
-                break;
-
-
-            case CCLK:
-
-
-                os_printf("clk parameter_timestamp %s \n",parameter_timestamp);
-
-                //等待回应：未绑定/定位错误
-                if(creat_flag == 0)
-                    create_http(0);
-                else//再次获取id
-                {
-                    create_http(4);
-
-                }
-                break;
-
-            case ZCFUN:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(e_power_off,os_strlen(e_power_off));
-                os_printf("send %s\n",e_power_off);
-                at_state = ZOFF;
-                break;
-
-            case ZOFF:
-                os_printf("NB turned off, now system turn off\n");
-    //            delay_power_on();//关机
-                shut_down_flag = 1;
-//                os_timer_disarm(&temer_90s);
-                power_on();
-                break;
-
-            case ZGMODE:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(zgnmea,os_strlen(zgnmea));
-                os_printf("send %s\n",zgnmea);
-                at_state = ZGNMEA;
-                break;
-
-            case ZGSTOP:
-//                zgmode[10] = '1';
-//                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-//                queue_uart_send(zgmode,os_strlen(zgmode));
-//                os_printf("send %s\n",zgmode);
-
-                os_timer_disarm(&restart_nb);
-
-//                start();
-
-                break;
-
-
-            case ZGNMEA:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(zgrun,os_strlen(zgrun));
-                os_printf("send %s\n",zgrun);
-
-
-                queue_uart_send(http_discon,os_strlen(http_discon));
-                os_printf("send %s\n",http_discon);
-                http_dis = 1;
-                start();
-                at_state = NONE;
-                break;
-
-            case HTTP_CON:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-
-                what_do(send_order);
-
-                break;
-
-            case HTTP_SEND:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_send1,os_strlen(http_send1));
-                os_printf("send1 %s\n",http_send1);
-                at_state = HTTP_SEND1;
-                break;
-
-            case HTTP_SEND1:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_send2,os_strlen(http_send2));
-                os_printf("send2 %s\n",http_send2);
-                at_state = HTTP_SEND2;
-                break;
-
-            case HTTP_SEND2:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_send3,os_strlen(http_send3));
-                os_printf("send3 %s\n",http_send3);
-                at_state = HTTP_SEND3;
-                break;
-
-            case HTTP_SEND3:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_send4,os_strlen(http_send4));
-                os_printf("send4 %s\n",http_send4);
-                at_state = HTTP_SEND4;
-                break;
-
-            case HTTP_SEND4:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_send5,os_strlen(http_send5));
-                os_printf("send5 %s\n",http_send5);
-                at_state = HTTP_SEND5;
-                break;
-
-            case HTTP_SEND5:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                if(isFixedTime[0] == 48)
-                {
-                    queue_uart_send(http_send7,os_strlen(http_send7));
-                    os_printf("send6 %s\n",http_send7);
-                }else
-                {
-                    queue_uart_send(http_send6,os_strlen(http_send6));
-                    os_printf("send6 %s\n",http_send6);
-                }
-
-                os_printf("send done\n");
-                gnrmc_gps_flag = 0;
-                at_state = NONE;
-                break;
-
-            case HTTP_DISCON:
-            case HTTP_DESTROY:
-                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-                queue_uart_send(http_con,os_strlen(http_con));
-                os_printf("send %s\n",http_con);
-                at_state = HTTP_CON;
-                break;
-
-            default:
-                break;
-
-            }
+            receive_ok();
         }
 
 
@@ -1092,19 +1295,21 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 //                os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
 //                os_printf("{\"code\":\"0\",\"desc\":\"success\"}\n");
                 led_state = 5;
-//                devicexx_io_led_timer_tick();
+                devicexx_io_led_timer_tick();
 //                send_flag = 0;
                 //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
                 os_memset(uart_receive_at,'\0',sizeof(char)*2048);
                 queue_uart_send(read_adc,os_strlen(read_adc));
                 at_state = ZADC;
-                os_printf("read adc %s\n",read_adc);
+
 
             }else if(os_strstr(uart_receive_at,"e59cb0e79086e58cbae59f9fe5a496")||os_strstr(uart_receive_at,"e5bd93e5898de697a0e4bbbbe58aa1")||os_strstr(uart_receive_at,"e58f82e695b0e4b8bae7a9ba"))
             {
                 //地理区域外         当前无任务       参数为空
                 os_timer_disarm(&check_id_timer);
                 os_timer_arm(&check_id_timer, 120000, 1);
+                led_state = 5;
+                devicexx_io_led_timer_tick();
 //                delay_power_off();//关机
             }else if(os_strstr(uart_receive_at,"636f6c6c6563744964"))//获得id,查询版本
             {
@@ -1124,7 +1329,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_memcpy(istime,cid_addr+87,1);
                 os_memcpy(issite,cid_addr+121,1);
                 os_printf("istime %d , issite %d\n",istime[0],issite[0]);
-//22636f6c6c6563744964223a22434a303030303030303034222c226973436f727265637454696d65223a302c2269734c6f636174696f6e223a312c
+
                 for(i=0;i<22;i++)
                 {
                     if(temp_tag[i]<58)
@@ -1171,95 +1376,33 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 }else if(istime[0] == 49 || issite[0] == 49 )//此时没有任务，再判断是否能升级。0在；1不在
                 {
                     os_timer_disarm(&restart_nb);
+//                    uint8_t remote_ip[4] = {221,122,119,226};//目标IP地址,必须要先从手机获取，否则连接失败.
+//                    ota_start_upgrade(remote_ip, 80, "");
+                    wifi_state = 0;
                     update_firmware();
 
                 }
                 if(0 == os_strcmp(parameter_tag,"00000000000") || istime[0] == 49)//等于00000000
                 {
                     get_tag_flag=0;
-                    http_dis = 1;
-                    queue_uart_send(http_discon,os_strlen(http_discon));
-                    os_printf("discon %s\n",http_discon);
 
+                    if(http_dis == 0)
+                    {
+
+                        queue_uart_send(http_discon,os_strlen(http_discon));
+                        os_printf("discon %s\n",http_discon);
+                        http_dis = 1;
+                    }
                 }
                 os_timer_disarm(&restart_nb);
-                os_timer_arm(&restart_nb, 305000, 1);//20s后没有收到数据，重启
+                os_timer_arm(&restart_nb, 185000, 1);//3分钟后没有收到数据，重启
 
 
             }
             else if(os_strstr(uart_receive_at,"2c226c6f6e223a22"))//返回室内定位经纬度
             {
-                uint8_t i;
-                uint8_t * lon_addr = NULL;
-                lon_addr = strstr(uart_receive_at,"2c226c6f6e22");//lon
+                get_indoor_position();
 
-                uint8_t mmac_str[72];
-                os_memcpy(mmac_str, lon_addr+96 , 72);
-                os_printf("mmac_str %s\n",&mmac_str);
-
-
-                for(i=0;i<72;i++)
-                {
-                    mmac_str[i]-=48;
-                }
-
-                for(i=0;i<36;i++)
-                {
-                    mmac_str[i]=mmac_str[i*2]*16+mmac_str[i*2+1];
-                    if(mmac_str[i]<58)
-                        mmac_str[i]-=48;
-                    else
-                        mmac_str[i]-=55;
-
-                }
-                for(i=0;i<36;i++)
-                {
-                    mmac_str[i]=mmac_str[i*2]*16+mmac_str[i*2+1];
-                }
-//                for(i=0;i<18;i++)
-//                    os_printf("mmac_str %x\n",mmac_str[i]);
-
-                for(i=0;i<6;i++)
-                {
-                    apmac_rssi[0][i]=mmac_str[i];
-                    apmac_rssi[1][i]=mmac_str[i+6];
-                    apmac_rssi[2][i]=mmac_str[i+12];
-                }
-                for(i=0;i<3;i++)
-                {
-                    os_printf( "%2d-----%02X:%02X:%02X:%02X:%02X:%02X ,rssi:%d ,channel:%d\r\n", i,
-                           apmac_rssi[i][0], apmac_rssi[i][1], apmac_rssi[i][2],
-                           apmac_rssi[i][3], apmac_rssi[i][4], apmac_rssi[i][5],
-                           apmac_rssi[i][6],apmac_rssi[i][7] );
-                }
-                resolution_times();
-
-                for(i=0;i<4;i++)
-                {
-                    os_memcpy(parameter_latitude+i, lon_addr+57+i*2 , 1);
-                }
-
-                for(i=0;i<5;i++)
-                {
-                    os_memcpy(parameter_longitude+i,lon_addr+17+i*2, 1);
-
-                    os_memcpy(parameter_longitude+i+6,lon_addr+29+i*2, 1);
-                    os_memcpy(parameter_latitude+i+5, lon_addr+67+i*2 , 1);
-                }
-
-
-
-                os_printf("parameter_longitude=%s\nparameter_latitude=%s\n\n",parameter_longitude,parameter_latitude);
-                os_memcpy(http_get_tag+106, parameter_longitude, os_strlen(parameter_longitude));
-                os_memcpy(http_get_tag+122, parameter_latitude , os_strlen(parameter_latitude));
-
-                update_data();
-
-
-
-//                queue_uart_send(http_get_tag,os_strlen(http_get_tag));
-//                os_printf("send %s\n",http_get_tag);
-//                at_state = WAIT;
             }
 
             else if(os_strstr(uart_receive_at,"e5ae9ae4bd8de99499e8afaf"))//定位错误
@@ -1306,7 +1449,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_memcpy(http_answer+206,bind_success,12);
                 os_printf("http_head = %s\n",http_answer);
                 led_state = 5;
-//                devicexx_io_led_timer_tick();
+                devicexx_io_led_timer_tick();
                 //再次获取id
                 queue_uart_send(http_get_tag,os_strlen(http_get_tag));
                 os_printf("send %s\n",http_get_tag);
@@ -1325,6 +1468,9 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 os_printf("{\"error\"}\n");
                 os_printf("{\"error\"}\n");
 
+                queue_uart_send(http_get_tag,os_strlen(http_get_tag));
+                os_printf("send %s\n",http_get_tag);
+                at_state = WAIT;
 //                //检测电池电压 v*5.7,max(4.3V)=755,min(3.1V)=544
 //                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
 //                queue_uart_send(read_adc,os_strlen(read_adc));
@@ -1345,29 +1491,48 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
         if(os_strstr(uart_receive_at,"GNRMC"))
         {
+        	uint8_t i;
             gnrmc_gps_flag++;
 
             if(uart_receive_at[17] == 'A')
             {
-                gnrmc_gps_flag = 0;
+//                gnrmc_gps_flag = 0;
                 get_gps = 1;
 #ifdef OLED_VERSION
 #else
                 GPIO_OUTPUT_SET(PIN_GPS_S, 0);
 #endif
-                os_printf("receive %s\n",uart_receive_at);
+
+                uint8_t FixedTime[1] = {0};
+                char * gnrmc_addr = NULL;
+
+                    //03 46 39 11 01 19
+                gnrmc_addr = strstr(uart_receive_at,"$GNRMC");//"fixedId"
+
+
+//   $GNRMC,080457.14,A,3958.99017,N,11618.03480,E,1.770,,070319,,,A,V*16
+//                os_printf("receive %s\n",uart_receive_at);
 //临时
-                os_memcpy(parameter_longitude,uart_receive_at + 32, os_strlen(parameter_longitude));
-                os_memcpy(parameter_latitude, uart_receive_at + 19 , os_strlen(parameter_latitude));
+                os_memcpy(parameter_longitude,gnrmc_addr + 32, os_strlen(parameter_longitude));
+                os_memcpy(parameter_latitude, gnrmc_addr + 19 , os_strlen(parameter_latitude));
 
-                os_memcpy(http_get_tag+106, parameter_longitude, os_strlen(parameter_longitude));
-                os_memcpy(http_get_tag+122, parameter_latitude , os_strlen(parameter_latitude));
-
-                os_memcpy(parameter_timestamp, uart_receive_at + 7 , 6);
-                os_memcpy(parameter_timestamp+6, uart_receive_at + 53 ,6);
-                os_memcpy(http_get_tag + 138, parameter_timestamp , 12);
+                strhex_to_str(parameter_longitude,4);
+                strhex_to_str(parameter_latitude,3);
 
 
+
+
+                if(os_strstr(parameter_timestamp,"."))
+                {
+                	for(i=0;i<12;i++)
+                		parameter_timestamp[i] = '0';
+                }else
+                {
+                    os_memcpy(parameter_timestamp, gnrmc_addr + 7 , 6);
+                    os_memcpy(parameter_timestamp+6, gnrmc_addr + 53 ,6);
+                    strhex_to_str(parameter_timestamp,5);
+
+                }
                 os_printf("parameter_longitude=%s\nparameter_latitude=%s\nparameter_timestamp=%s\ncreat_flag=%d\n"
                                         ,parameter_longitude,parameter_latitude,parameter_timestamp,creat_flag);
 
@@ -1385,32 +1550,34 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
             }else
             {
-                uint8_t i;
+
                 get_gps = 0;
 #ifdef OLED_VERSION
 #else
                 GPIO_OUTPUT_SET(PIN_GPS_S, 1);
 #endif
 //                at_state = WAIT;
-                for(i=0;i<12;i++)
-                    parameter_timestamp[i] = '0';
+//                for(i=0;i<12;i++)
+//                    parameter_timestamp[i] = '0';
     //            os_printf("parameter_timestamp %s\n",parameter_timestamp);
             }
 
             os_printf("at_state = %d,gnrmc_gps_flag = %d\n",at_state,gnrmc_gps_flag);
 
 
-            if(gnrmc_gps_flag > 120 )
+            if(gnrmc_gps_flag > 90 )
             {
                 gnrmc_gps_flag = 0;
+                http_dis = 1;
+                queue_uart_send(read_adc,os_strlen(read_adc));
+                at_state = ZADC;
 
-                if(get_tag_flag == 1)
-                    start();
+                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
             }
         }
 
-        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-        os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
+
+//        os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
 	}
 
 }
@@ -1476,6 +1643,22 @@ devicexx_app_save(void)
 	    (void *)(&local_system_status),
 	    sizeof(local_system_status));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

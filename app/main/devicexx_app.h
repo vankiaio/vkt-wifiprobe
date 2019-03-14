@@ -15,6 +15,7 @@
 
 typedef enum {
     NONE,
+    EDNS,
 	LED,
     ZADC,
     CCLK,
@@ -23,7 +24,7 @@ typedef enum {
     ZGMODE,
     ZGMODE1,
     ZGNMEA,
-    ZGNMEA1,
+    ZGNMEA1,//10
     ZGDATA,
     ZGRUN,
     ZGSTOP,
@@ -33,7 +34,7 @@ typedef enum {
     HTTP_SEND,
     HTTP_SEND1,
     HTTP_SEND2,
-    HTTP_SEND3,
+    HTTP_SEND3,//20
     HTTP_SEND4,
     HTTP_SEND5,
     HTTP_SEND6,
@@ -60,12 +61,18 @@ extern uint8_t  update_host[128];
 
 extern uint8_t apmac_rssi[6][8];
 
+
+extern uint8_t read_adc[];
+
+
 void ap_str_ascii_str(char * body);
 void power_on(void);
 void update_post_bind(void);
 void check_id(void);
+void http_disc(void);
 void check_gps(void);
 void nbiot_http_post(void);
+void update_data(void);
 // Save user data to last 15, 14, 13 sector of flash
 #define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
 
