@@ -13,14 +13,15 @@
 void platform_init(void);
 void delay_power_on(void);
 
-extern os_timer_t timer_3S;
+extern uint8_t *  ap_str;
+
 extern os_timer_t check_id_timer;
 extern os_timer_t restart_nb;
 extern os_timer_t timer_300s;
 extern os_timer_t scan_timer;
 extern os_timer_t delay_update_timer;
 extern os_timer_t delay_discon_timer;
-
+extern os_timer_t wait_nb_con_timer;
 
 //#define OLED
 

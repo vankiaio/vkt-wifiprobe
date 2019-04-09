@@ -33,7 +33,7 @@
 os_timer_t upload_data;
 os_timer_t bind_timeout;
 uint8_t update_reboot = 0;
-
+uint8_t st1,st2;
 
 #define VOWSTAR_WAN_DEBUG(format, ...) os_printf(format, ##__VA_ARGS__)
 
@@ -41,7 +41,7 @@ uint8_t ap_ssid[32] = "qingzhu";
 uint8_t  ap_pwd[32] = "12345678";
 uint8_t update_host[128];
 uint8_t send_order = 0;
-uint8_t http_dis = 0;
+uint8_t http_dis = 1;
 uint8_t isFixedTime[1] ;
 
 uint8_t version_type;
@@ -57,28 +57,30 @@ uint8_t apmac_rssi[6][8] = {
 //uint8_t meng[] = "AT*MENGINFO=0\r\n";
 
 uint8_t cclk[] = "AT+CCLK?\r\n";
-uint8_t ipr[] = "AT+IPR=<115200>\r\n";
+uint8_t ipr[] = "AT+IPR=0\r\n";
 uint8_t at[] = "AT\r\n";
 uint8_t read_adc[] = "AT+ZADC?\r\n";
 uint8_t con_led[] = "AT+ZCONTLED=1\r\n";
 
 uint8_t at_cfun[] = "AT+CFUN=0\r\n";
 uint8_t e_power_off[] = "AT+ZTURNOFF\r\n";
+uint8_t get_cesq[] = "AT+CESQ\r\n";
+
 //uint8_t rx_fifo[2048];
 
 
-//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
 
-uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://47.105.207.228:8098/\",,,0,,0,,0,\"\r\n";
+//uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://47.105.207.228:8098/\",,,0,,0,,0,\"\r\n";
 
 //uint8_t edns[] = "AT+EDNS=\"wpupgrade.devicexx.com\"\r\n";//
-//uint8_t edns[] = "AT+EDNS=\"bc.qzbdata.com\"\r\n";//  «Â÷Ò¥Û ˝æ› ”Ú√˚
+//uint8_t edns[] = "AT+EDNS=\"bc.qzbdata.com\"\r\n";//  Ê∏ÖÁ´πÂ§ßÊï∞ÊçÆ ÂüüÂêç
 
 uint8_t http_con[] = "AT+EHTTPCON=0\r\n";
 
 uint8_t http_post_apmac [] = "AT+EHTTPSEND=0,326,326,\"0,1,14,\"/location/wifi\",0,,16,\"application/json\",273,7B226D6163223a223030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B3030303030303030303030302C30302C323430303B227D,\"\r\n";
 
-uint8_t http_post_bind  [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C226C6F67696E4E616D65223A223132333435363738393031323334353637383930313233343536373839303132222C226C6F67696E507764223A223132333435363738393031323334353637383930313233343536373839303132227D,\"\r\n";
+//uint8_t http_post_bind  [] = "AT+EHTTPSEND=0,312,312,\"0,1,12,\"/device/sign\",0,,16,\"application/json\",261,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C226C6F67696E4E616D65223A223132333435363738393031323334353637383930313233343536373839303132222C226C6F67696E507764223A223132333435363738393031323334353637383930313233343536373839303132227D,\"\r\n";
 
 
 //uint8_t http_get_tag [] = "AT+EHTTPSEND=0,137,137,\"0,0,117,\"/MacGather/submitValue?deviceId=Qingzhu-VQECFABC1A9F16&version=0.000&lng=00000.00000&wei=0000.00000&time=000000000000\",0,,0,,0,,\"\r\n";
@@ -103,9 +105,14 @@ uint8_t creat_flag = 0;
 
 uint8_t gnrmc_gps_flag = 0;
 at_state_t at_state = 0;
+post_state_t post_state = 0;
 uint16_t z_adc = 0;
 uint8_t shut_down_flag = 0;
 uint8_t get_tag_flag = 0;
+uint8_t update_firmware_flag= 1;
+uint8_t nb_signal_bad = 1;
+uint8_t scan_qz = 0;
+
 
 
 
@@ -117,16 +124,19 @@ uint8_t zgstop[] = "AT+ZGRUN=0\r\n";
 uint8_t zgdata[] = "AT+ZGDATA \r\n";
 
 
+uint8_t parameter_version[]  = "0.000";
 
 uint8_t parameter_deviceId[] = "Qingzhu-VQ112233445566";
+
 //                              QZBData
 //uint8_t                    = "vankia-01-68c63a8a2420";
 
 //parameter_longitude=11618.00871;
 //parameter_latitude=3958.98470;
 //parameter_timestamp=034639110119;
-uint8_t parameter_timestamp[] = "111111111111";//∂º «1,∂ºŒ™0ª·”Îtag÷ÿµ˛
+uint8_t parameter_timestamp[] = "111111111111";//ÈÉΩÊòØ1,ÈÉΩ‰∏∫0‰ºö‰∏étagÈáçÂè†//‰øÆÊîπtag
 //                              181101,185415
+uint8_t fixedId[] = "GD000000000";
 
 
 uint8_t parameter_tag[] = "00000000000";//CJ,JD
@@ -134,9 +144,7 @@ uint8_t parameter_longitude[] = "00000.00000";
 //                              11618.03708
 uint8_t parameter_latitude[] = "0000.00000";
 //                             3958.98966
-#define JSON_DEVICE_MAC "{\"deviceId\":\"%s\",\"timestamp\":\"%s\",\"collectId\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\",\"mac_str\":\"%s\"}"
 
-#define JSON_POST_BIND  "{\"deviceId\":\"%s\",\"loginName\":\"%s\",\"loginPwd\":\"%s\"}"
 
 
 
@@ -176,77 +184,129 @@ ota_finished_callback(void *arg)
         }
 }
 
+
+
+//LOCAL void ICACHE_FLASH_ATTR
+//get_white_list_callback(void * ctx, char * response_body, size_t response_body_size, int http_status, char * response_headers)
+//{
+//    uint16_t i;
+//    os_printf("%s: status:%d\n", __func__, http_status);
+//    if ((NULL != response_body) && (0 != response_body_size) && (NULL != response_headers)) {
+//        if (200 == http_status) {
+//            // Process and try encrypt data
+//            for(i=0;i<response_body_size;i++)
+//            {
+//                os_printf("%c",response_body[i]);
+//            }
+//        } else {
+//            response_body[response_body_size] = '\0';
+//            os_printf("%s: error:\n%s\n", __func__, response_body);
+//        }
+//    }
+//}
+
 void ICACHE_FLASH_ATTR
 ota_start_upgrade(const char *server_ip, uint16_t port,const char *path)
 //ota_start_upgrade(uint16_t port,const char *path)
 {
-    char file[16] = "user0.0.000.bin";
-    //ªÒ»°œµÕ≥µƒƒø«∞º”‘ÿµƒ «ƒƒ∏ˆbinŒƒº˛
-    uint8_t userBin = system_upgrade_userbin_check();
-    //0£∫user1  1:user2
-    os_printf("userbin = %d\n",userBin);
-    switch (userBin) {
+    char file[20];
+    if(update_firmware_flag)
+    {
+        os_memcpy(file,"user0.0.000.bin",15);
+        file[15]='\0';
+        //Ëé∑ÂèñÁ≥ªÁªüÁöÑÁõÆÂâçÂä†ËΩΩÁöÑÊòØÂì™‰∏™binÊñá‰ª∂
+        uint8_t userBin = system_upgrade_userbin_check();
+        //0Ôºöuser1  1:user2
+        os_printf("userbin = %d\n",userBin);
+        switch (userBin) {
 
-    //»Áπ˚ºÏ≤Èµ±«∞µƒ «¥¶”⁄user1µƒº”‘ÿŒƒº˛£¨ƒ«√¥¿≠»°µƒæÕ «user2.bin
-    case UPGRADE_FW_BIN1:
-        file[4] = '2';
-        break;
+        //Â¶ÇÊûúÊ£ÄÊü•ÂΩìÂâçÁöÑÊòØÂ§Ñ‰∫éuser1ÁöÑÂä†ËΩΩÊñá‰ª∂ÔºåÈÇ£‰πàÊãâÂèñÁöÑÂ∞±ÊòØuser2.bin
+        case UPGRADE_FW_BIN1:
+            file[4] = '2';
+            break;
 
-        //»Áπ˚ºÏ≤Èµ±«∞µƒ «¥¶”⁄user2µƒº”‘ÿŒƒº˛£¨ƒ«√¥¿≠»°µƒæÕ «user1.bin
-    case UPGRADE_FW_BIN2:
-    	file[4] = '1';
-        break;
+            //Â¶ÇÊûúÊ£ÄÊü•ÂΩìÂâçÁöÑÊòØÂ§Ñ‰∫éuser2ÁöÑÂä†ËΩΩÊñá‰ª∂ÔºåÈÇ£‰πàÊãâÂèñÁöÑÂ∞±ÊòØuser1.bin
+        case UPGRADE_FW_BIN2:
+            file[4] = '1';
+            break;
 
-        //»Áπ˚ºÏ≤È∂º≤ª «£¨ø…ƒ‹¥ÀøÃ≤ª «OTAµƒbinπÃº˛
-    default:
-        os_printf("Fail read system_upgrade_userbin_check! \n\n");
-        return;
+            //Â¶ÇÊûúÊ£ÄÊü•ÈÉΩ‰∏çÊòØÔºåÂèØËÉΩÊ≠§Âàª‰∏çÊòØOTAÁöÑbinÂõ∫‰ª∂
+        default:
+            os_printf("Fail read system_upgrade_userbin_check! \n\n");
+            return;
+        }
+
+
+        file[6] = version_type + 48;
+        file[8] = version_num/100 + 48;
+        file[9] = version_num%100/10 + 48;
+        file[10] = version_num%100%10 + 48;
+
+        os_printf("%c",file[8]);os_printf("%c",file[9]);os_printf("%c",file[10]);
+    }else
+    {
+        os_memcpy(file,"white_list_10_1.txt",19);
+        file[19]='\0';
     }
-
-
-    file[6] = version_type + 48;
-    file[8] = version_num/100 + 48;
-    file[9] = version_num%100/10 + 48;
-    file[10] = version_num%100%10 + 48;
-
-    os_printf("%c",file[8]);os_printf("%c",file[9]);os_printf("%c",file[10]);
 
     struct upgrade_server_info* update =
             (struct upgrade_server_info *) os_zalloc(sizeof(struct upgrade_server_info));
     update->pespconn = (struct espconn *) os_zalloc(sizeof(struct espconn));
-    //…Ë÷√∑˛ŒÒ∆˜µÿ÷∑
+    //ËÆæÁΩÆÊúçÂä°Âô®Âú∞ÂùÄ
     os_memcpy(update->ip, server_ip, 4);
-    //…Ë÷√∑˛ŒÒ∆˜∂Àø⁄
+    //ËÆæÁΩÆÊúçÂä°Âô®Á´ØÂè£
     update->port = port;
-    //…Ë÷√OTAªÿµ˜∫Ø ˝
+    //ËÆæÁΩÆOTAÂõûË∞ÉÂáΩÊï∞
     update->check_cb = ota_finished_callback;
-    //…Ë÷√∂® ±ªÿµ˜ ±º‰
+    //ËÆæÁΩÆÂÆöÊó∂ÂõûË∞ÉÊó∂Èó¥
     update->check_times = 30000;
-    //¥” 4M *1024 =4096…Í«Îƒ⁄¥Ê
+    //‰ªé 4M *1024 =4096Áî≥ËØ∑ÂÜÖÂ≠ò
     update->url = (uint8 *)os_zalloc(4096);
 
-    //¥Ú”°œ¬’à«Ûµÿ÷∑
+    //ÊâìÂç∞‰∏ãË´ãÊ±ÇÂú∞ÂùÄ
 //    os_printf("Http Server Address:%d.%d.%d.%d ,port: %d,filePath: %s,fileName: %s \n",
 //    		IP2STR(update->ip), update->port, path, file);
 
-    //∆¥Ω”ÕÍ’˚µƒ URL»•«Î«Û∑˛ŒÒ∆˜
+    //ÊãºÊé•ÂÆåÊï¥ÁöÑ URLÂéªËØ∑Ê±ÇÊúçÂä°Âô®
 //    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: "IPSTR":%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
 //			               path, file, IP2STR(update->ip), update->port);
 
-    os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: %s:%d\r\n"	"Connection: keep-alive\r\n" "\r\n",
-			               path, file, update_host, update->port );
 
+    if(update_firmware_flag)
+    {
+        os_sprintf((char*) update->url, "GET /%s%s HTTP/1.1\r\n" "Host: %s:%d\r\n"  "Connection: keep-alive\r\n" "\r\n",
+                               path, file, update_host, update->port );
+        os_printf("url %s\n",update->url);
 
-    os_printf("url %s\n",update->url);
+        if (system_upgrade_start(update) == false) {
+            os_printf(" Could not start upgrade\n");
+            //ÈáäÊîæËµÑÊ∫ê
+            os_free(update->pespconn);
+            os_free(update->url);
+            os_free(update);
+        } else {
+            os_printf(" Upgrading...\n");
+        }
+    }else
+    {
+//        os_sprintf((char*) update->url, "%s%s\r\n" "Connection: keep-alive\r\n" "\r\n",
+//                               path, file, update->port );
+        os_sprintf((char*) update->url, "%s\r\n" ,
+                               path);
+        // Build URL
 
-    if (system_upgrade_start(update) == false) {
-        os_printf(" Could not start upgrade\n");
-        // Õ∑≈◊ ‘¥
-        os_free(update->pespconn);
-        os_free(update->url);
-        os_free(update);
-    } else {
-        os_printf(" Upgrading...\n");
+        if (NULL != update->url) {
+            void * ctx = NULL;
+            // Perform a http get request
+//            http_get(ctx, update->url, "Content-Type: text/plain", get_white_list_callback);
+            os_printf("%s: url %s\n", __func__, update->url);
+        } else {
+            os_printf("%s: not enough memory\r\n", __func__);
+        }
+
+        // Free memory
+        if (update->url)
+            os_free(update->url);
     }
 }
 
@@ -291,13 +351,216 @@ delay_power_off()
 
 }
 
+
 void ICACHE_FLASH_ATTR
-bind_timeout_cb(void)
+resolution_times( char * buffer )
 {
-    char *not_match="¡¨Ω”≥¨ ±";
-    os_memcpy(http_answer+206,not_match,8);
-    os_printf("∞Û∂®µ»¥˝≥¨ ±\n");
+    uint8_t i;
+    uint8_t * date_addr = NULL;
+    uint8_t mouth_ab[12][4]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"};
+    uint8_t mouth_num[12][3]={"01","02","03","04","05","06","07","08","09","10","11","12"};
+
+    char *p,*n;
+
+    for(i=0;i<12;i++)
+    {
+        p=mouth_ab[i];
+        n=mouth_num[i];
+        if(strstr(buffer,p))
+        {
+            os_memcpy(parameter_timestamp+8,n,2);//Êúà
+        }
+    }
+
+    date_addr = strstr(buffer,"Date:");
+
+    os_memcpy(parameter_timestamp+6,date_addr+11,2);//Êó•
+    os_memcpy(parameter_timestamp+10,date_addr+20,2);//Âπ¥
+    os_memcpy(parameter_timestamp,date_addr+23,2);//Êó∂
+    os_memcpy(parameter_timestamp+2,date_addr+26,2);//ÂàÜ
+    os_memcpy(parameter_timestamp+4,date_addr+29,2);//Áßí
+
+    st1 = system_get_time()/1000000000;
+
+//    034639110119
+    os_printf("parameter_timestamp %s\n",parameter_timestamp);
 }
+
+uint8_t ICACHE_FLASH_ATTR
+strtoi(uint8_t *str)
+{
+    return ((str[0]-48)*10+str[1]-48);
+}
+
+void ICACHE_FLASH_ATTR
+itostr(uint8_t *num , uint8_t *str)
+{
+
+    str[0]=*num/10+48;
+    str[1]=*num%10+48;
+
+}
+
+void ICACHE_FLASH_ATTR
+update_timestamp(void)
+{
+    uint8  iY, iM, iD, iH, iMin, iS;
+    uint8_t sY[2],sM[2],sD[2],sH[2],sMin[2],sS[2];
+
+
+
+//    os_memcpy(parameter_timestamp,"235958311216",os_strlen(parameter_timestamp));
+    os_printf("parameter_timestamp:%s\n",parameter_timestamp);
+
+    os_memcpy(sY,parameter_timestamp+10,2);
+    os_memcpy(sM,parameter_timestamp+8,2);
+    os_memcpy(sD,parameter_timestamp+6,2);
+    os_memcpy(sH,parameter_timestamp,2);
+    os_memcpy(sMin,parameter_timestamp+2,2);
+    os_memcpy(sS,parameter_timestamp+4,2);
+
+    iY = strtoi(sY);
+    iM = strtoi(sM);
+    iD = strtoi(sD);
+    iH = strtoi(sH);
+    iMin = strtoi(sMin);
+    iS = strtoi(sS);
+    os_printf("%d-%0d-%0d %0d:%0d:%0d\n", iY, iM, iD, iH, iMin, iS);
+//    st1 = 0;
+    st2 = system_get_time()/1000000000;
+//    st2 = 15076562671/1000000000;
+    os_printf("sys_time:%d\n",st2);
+    iS+=(st2-st1);
+    if(iS>59){
+        iS-=60;
+        iMin++;
+        if(iMin>59){
+            iMin-=60;
+            iH++;
+            if(iH>23){
+                iH-=24;
+                iD++;
+                switch (iM)
+                {
+                    case 1:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM++;
+                        }
+                    }break;
+                    case 2:
+                    {
+                        if((iY%4==0 && iY%100!=0) || iY%400==0){//Èó∞Âπ¥
+                            if(iD>29){
+                                iD-=29;
+                                iM++;
+                            }
+                        }else{
+                            if(iD>28){
+                                iD-=28;
+                                iM++;
+                            }
+                        }
+                    }break;
+                    case 3:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM++;
+                        }
+                    }break;
+                    case 4:
+                    {
+                        if(iD>30){
+                            iD-=30;
+                            iM++;
+                        }
+                    }break;
+                    case 5:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM++;
+                        }
+                    }break;
+                    case 6:
+                    {
+                        if(iD>30){
+                            iD-=30;
+                            iM++;
+                        }
+                    }break;
+                    case 7:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM++;
+                        }
+                    }break;
+                    case 8:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM++;
+                        }
+                    }break;
+                    case 9:
+                    {
+                        if(iD>30){
+                            iD-=30;
+                            iM++;
+                        }
+                    }break;
+                    case 10:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM++;
+                        }
+                    }break;
+                    case 11:
+                    {
+                        if(iD>30){
+                            iD-=30;
+                            iM++;
+                        }
+                    }break;
+                    case 12:
+                    {
+                        if(iD>31){
+                            iD-=31;
+                            iM=1;
+                            iY++;
+                        }
+                    }break;
+                }
+            }
+        }
+    }
+
+    os_printf("%d-%0d-%0d %0d:%0d:%0d\n", iY, iM, iD, iH, iMin, iS);
+
+    itostr(&iY,sY);
+    itostr(&iM,sM);
+    itostr(&iD,sD);
+    itostr(&iH,sH);
+    itostr(&iMin,sMin);
+    itostr(&iS,sS);
+
+
+    os_memcpy(parameter_timestamp+10,sY,2);
+    os_memcpy(parameter_timestamp+8,sM,2);
+    os_memcpy(parameter_timestamp+6,sD,2);
+    os_memcpy(parameter_timestamp,sH,2);
+    os_memcpy(parameter_timestamp+2,sMin,2);
+    os_memcpy(parameter_timestamp+4,sS,2);
+
+
+    os_printf("parameter_timestamp:%s\n",parameter_timestamp);
+}
+
+
 
 
 void ICACHE_FLASH_ATTR
@@ -319,18 +582,18 @@ what_do(uint8_t times)
         at_state = WAIT;
         break;
 
-    case 1://∑¢«Î«Û∞Û∂®
-        queue_uart_send(http_post_bind,os_strlen(http_post_bind));
-        os_printf("http_post_bind %s\n",http_post_bind);
-
-        os_timer_disarm(&bind_timeout);
-        os_timer_setfn(&bind_timeout, (os_timer_func_t *) bind_timeout_cb, NULL);
-        os_timer_arm(&bind_timeout, 15000, 0);
-
-        at_state = WAIT;
+    case 1://ÂèëËØ∑Ê±ÇÁªëÂÆö
+//        queue_uart_send(http_post_bind,os_strlen(http_post_bind));
+//        os_printf("http_post_bind %s\n",http_post_bind);
+//
+//        os_timer_disarm(&bind_timeout);
+//        os_timer_setfn(&bind_timeout, (os_timer_func_t *) bind_timeout_cb, NULL);
+//        os_timer_arm(&bind_timeout, 15000, 0);
+//
+//        at_state = WAIT;
         break;
 
-    case 2://∑¢100∏ˆmac
+    case 2://Âèë100‰∏™mac
 //        if( 0 == os_strcmp(parameter_longitude,"00000.00000") && 0 == os_strcmp(parameter_latitude,"0000.00000") )
 //        {
 //            at_state = NONE;
@@ -342,23 +605,25 @@ what_do(uint8_t times)
         }
         break;
 
-    case 3://∑¢6∏ˆap mac
+    case 3://Âèë6‰∏™ap mac
 
 //        uint8_t http_post_apmac_tt [] = "AT+EHTTPSEND=0,326,326,\"0,1,14,\"/location/wifi\",0,,16,\"application/json\",273,7B226D6163223a224534413743353541463530322C35362C323431323B4436314133463242324244312C36392C323436323B3241413032423231343044442C37352C323431323B4538344530363730323243302C38312C323435373B3743373636383638343343302C38322C323433373B4443463039453832414537302C38352C323431323B227D,\"\r\n";
 //        os_memcpy(http_post_apmac,http_post_apmac_tt,os_strlen(http_post_apmac_tt));
         queue_uart_send(http_post_apmac,os_strlen(http_post_apmac));
         os_printf("send %s\n",http_post_apmac);
 
-        at_state = NONE;
+        at_state = WAIT;
 
         os_timer_disarm(&delay_discon_timer);
-        os_timer_arm(&delay_discon_timer, 20000, 0);//20√Î∫Û∑¢ÀÕ
+        os_timer_arm(&delay_discon_timer, 20000, 0);//20ÁßíÂêéÂèëÈÄÅ
 
 
         os_timer_disarm(&delay_update_timer);
-        os_timer_arm(&delay_update_timer, 40000, 0);//20√Î∫Û∑¢ÀÕ
+        os_timer_arm(&delay_update_timer, 40000, 0);//20ÁßíÂêéÂèëÈÄÅ
+
+
         break;
-    case 4://‘Ÿ¥ŒªÒ»°»ŒŒÒid
+    case 4://ÂÜçÊ¨°Ëé∑Âèñ‰ªªÂä°id
         queue_uart_send(http_get_tag,os_strlen(http_get_tag));
         os_printf("send %s\n",http_get_tag);
         at_state = WAIT;
@@ -368,14 +633,20 @@ what_do(uint8_t times)
         break;
     }
 }
+void ICACHE_FLASH_ATTR
+get_rssi(){
+    os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+    queue_uart_send(get_cesq,os_strlen(get_cesq));
+    os_printf("send get_cesq %s\n",get_cesq);
 
+}
 
 void ICACHE_FLASH_ATTR
 create_http(uint8_t times)
 {
 
     os_timer_disarm(&restart_nb);
-    os_timer_arm(&restart_nb, 180000, 1);//3∑÷÷”∫Û√ª”– ’µΩ ˝æ›£¨÷ÿ∆Ù
+    os_timer_arm(&restart_nb, 180000, 1);//3ÂàÜÈíüÂêéÊ≤°ÊúâÊî∂Âà∞Êï∞ÊçÆÔºåÈáçÂêØ
     send_order = times;
     os_printf("send_order %d\n",send_order);
     os_printf("http_dis %d\n",http_dis);
@@ -404,37 +675,46 @@ create_http(uint8_t times)
     os_printf("at_state %d\n",at_state);
 }
 void ICACHE_FLASH_ATTR
-ap_str_ascii_str(char * body)
+ap_str_ascii_str(char * ap_str)
 {
-    uint16_t len = os_strlen(body);
-    os_printf("len=%d\n",len);
-    uint8_t str[len*2];
-    uint16_t i;
+    os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
+    os_printf("scan_qz:%d\n",scan_qz);
+    if (wifi_station_get_connect_status() == STATION_GOT_IP) {
+        scan_qz=1;
+    }else scan_qz=0;
 
-
-    for(i=0;i<len*2;i++)
+    if(scan_qz == 0)
     {
-        str[i] = (body[i/2] >> 4) & 0xf;
-        str[i+1] = body[i/2] & 0xf;
-        i++;
-    }
+        post_state = AP_MAC;
+        uint16_t len = os_strlen(ap_str);
+        os_printf("len=%d\n",len);
+        uint8_t str[len*2];
+        uint16_t i;
 
-    for(i=0;i<len*2;i++)
-    {
-        if(str[i]<10)
+
+        for(i=0;i<len*2;i++)
         {
-            str[i]+= 48;
-        }else
-        {
-            str[i]+= 55;
+            str[i] = (ap_str[i/2] >> 4) & 0xf;
+            str[i+1] = ap_str[i/2] & 0xf;
+            i++;
         }
+
+        for(i=0;i<len*2;i++)
+        {
+            if(str[i]<10)
+            {
+                str[i]+= 48;
+            }else
+            {
+                str[i]+= 55;
+            }
+        }
+
+    //    os_printf("ap_ascii %s\n",str);
+        os_memcpy(http_post_apmac+93,str, len*2);
+        os_printf("ap_ascii %s\n",http_post_apmac);
+        create_http(3);
     }
-
-//    os_printf("ap_ascii %s\n",str);
-    os_memcpy(http_post_apmac+93,str, len*2);
-    os_printf("ap_ascii %s\n",http_post_apmac);
-
-    create_http(3);
 }
 
 
@@ -576,26 +856,71 @@ str_ascii_str(char * body)
 }
 
 void ICACHE_FLASH_ATTR
-update_data()//…œ¥´mac ˝æ›
+update_data()//‰∏ä‰º†macÊï∞ÊçÆ
 {
-
     VOWSTAR_WAN_DEBUG("%s: request\r\n", __func__);
-    // Build Body's JSON string
-    uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_DEVICE_MAC) +
-                                           os_strlen(parameter_deviceId) +
-                                           os_strlen(parameter_timestamp) +
-                                           os_strlen(parameter_tag) +
-                                           os_strlen(parameter_longitude) +
-                                           os_strlen(parameter_latitude) +
-                                           os_strlen(sta_str)
-                                           );
 
-    if (body == NULL) {
-        VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-        return;
-    }
+    update_timestamp();
+    if (wifi_station_get_connect_status() == STATION_GOT_IP) {
+        scan_qz=1;
+    }else scan_qz=0;
+    if(scan_qz == 1)
+    {
 
-    os_sprintf(body,
+        uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_FIX_MAC) +
+                                               os_strlen(parameter_deviceId) +
+                                               os_strlen(parameter_timestamp) +
+                                               os_strlen(parameter_tag) +
+                                               os_strlen(parameter_longitude) +
+                                               os_strlen(parameter_latitude) +
+                                               os_strlen(sta_str)+
+                                               os_strlen(fixedId)
+                                               );
+        if (body == NULL) {
+            VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
+            return;
+        }
+        if(isFixedTime[0] == 48)
+        {
+            os_sprintf(body,
+                       JSON_FIX_MAC,
+                       parameter_deviceId,
+                       parameter_timestamp,
+                       parameter_tag,
+                       parameter_longitude,
+                       parameter_latitude,
+                       sta_str,
+                       fixedId);
+
+        }else{
+            os_sprintf(body,
+                   JSON_DEVICE_MAC,
+                   parameter_deviceId,
+                   parameter_timestamp,
+                   parameter_tag,
+                   parameter_longitude,
+                   parameter_latitude,
+                   sta_str);
+        }
+        post_state = UPMAC;
+        uint8_t * url = NULL;
+        url = "http://221.122.119.226:8098/MacGather/submitValue";
+        void * ctx = NULL;
+        http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
+        if (body)
+            os_free(body);
+
+    }else
+    {
+        uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_DEVICE_MAC) +
+                                               os_strlen(parameter_deviceId) +
+                                               os_strlen(parameter_timestamp) +
+                                               os_strlen(parameter_tag) +
+                                               os_strlen(parameter_longitude) +
+                                               os_strlen(parameter_latitude) +
+                                               os_strlen(sta_str)
+                                               );
+        os_sprintf(body,
                JSON_DEVICE_MAC,
                parameter_deviceId,
                parameter_timestamp,
@@ -603,159 +928,102 @@ update_data()//…œ¥´mac ˝æ›
                parameter_longitude,
                parameter_latitude,
                sta_str);
-
-//    VOWSTAR_WAN_DEBUG("%s: body %s\n", __func__, body);
-    str_ascii_str(body);
-    // Free memory
-
-    if (body)
-        os_free(body);
-
-}
-
-
-void ICACHE_FLASH_ATTR
-str_ascii_str_bind(char * bind_body)
-{
-    uint8_t str[2048];
-    uint16_t i;
-    uint16_t len = os_strlen(bind_body);
-    uint16_t data_len,json_len;
-
-    for(i=0;i<len*2;i++)
-    {
-        str[i] = (bind_body[i/2] >> 4) & 0xf;
-        str[i+1] = bind_body[i/2] & 0xf;
-        i++;
+        str_ascii_str(body);
+        if (body)
+            os_free(body);
     }
 
-    for(i=0;i<len*2;i++)
-    {
-        if(str[i]<10)
-        {
-            str[i]+= 48;
-        }else
-        {
-            str[i]+= 55;
-        }
-    }
-    str[len*2] = ',';
-    str[len*2+1] = '\"';
-    str[len*2+2] = '\r';
-    str[len*2+3] = '\n';
-    str[len*2+4] = '\0';
-
-    os_printf("len %d str %s \n",len,str);
-    os_printf("\n");
-
-    os_memcpy(http_post_bind+ 75, str, len*2+4);
-    os_memset(http_post_bind+79+len*2,'\0',sizeof(char)*(os_strlen(http_post_bind)-79-len*2));
-
-
-    json_len = len*2+1;
-    data_len = json_len+51;
-    os_printf("data_len %d,json_len %d,\n",data_len,json_len);
-
-    http_post_bind[15] = data_len/100 +48;
-    http_post_bind[16] = data_len%100/10 +48;
-    http_post_bind[17] = data_len%100%10 +48;
-    http_post_bind[19] = http_post_bind[15];
-    http_post_bind[20] = http_post_bind[16];
-    http_post_bind[21] = http_post_bind[17];
-
-    http_post_bind[71] = json_len/100 +48;
-    http_post_bind[72] = json_len%100/10 +48;
-    http_post_bind[73] = json_len%100%10 +48;
-
-    os_printf("http_post_bind15=%c,16=%c,17=%c,71=%c,72=%c,73=%c\n",http_post_bind[15],http_post_bind[16],http_post_bind[17],http_post_bind[71],http_post_bind[72],http_post_bind[73]);
-
-
-//AT+EHTTPSEND=0,235,235,"0,1,12,"/device/sign",0,,16,"application/json",184,7B226465766963654964223A223741526A6F34713361634E6557544746336D52577358222C226C6F67696E4E616D65223A223132333435363738393031323334353637383930222C226C6F67696E507764223A223233373930227D,"
-
-    create_http(1);
-
-
-//    send_flag = 0;
-}
-void ICACHE_FLASH_ATTR
-update_post_bind()
-{
-
-    os_printf("create len %d\n",os_strlen(http_post_bind));
-    VOWSTAR_WAN_DEBUG("%s: request\r\n", __func__);
-    // Build Body's JSON string
-    uint8_t * bind_body = (uint8_t *) os_zalloc(os_strlen(JSON_POST_BIND) +
-                                           os_strlen(parameter_deviceId) +
-                                           os_strlen(loginName) +
-                                           os_strlen(loginPwd)
-                                           );
-    if (bind_body == NULL) {
-        VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-        return;
-    }
-
-    os_sprintf(bind_body,
-               JSON_POST_BIND,
-               parameter_deviceId,
-               loginName,
-               loginPwd);
-
-    VOWSTAR_WAN_DEBUG("%s: body %s\n", __func__, bind_body);
-
-    str_ascii_str_bind(bind_body);
-    // Free memory
-    if (bind_body)
-        os_free(bind_body);
 }
 
 
 void ICACHE_FLASH_ATTR
 nbiot_http_post()
 {
+
+
     os_printf("Gather done\n");
     sni_temp = 0;
     os_timer_disarm(&channelHop_timer);
     wifi_promiscuous_enable(0);
-    os_timer_disarm(&checkTimer_wifistate); //»°œ˚∂® ±∆˜∂® ±
+    wifi_unregister_send_pkt_freedom_cb();
+
+    os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
+
+
+
+    os_timer_disarm(&checkTimer_wifistate); //ÂèñÊ∂àÂÆöÊó∂Âô®ÂÆöÊó∂
     if(get_gps == 1)
     {
         os_timer_disarm(&upload_data);
         os_timer_setfn(&upload_data, (os_timer_func_t *)update_data, NULL);
-        os_timer_arm(&upload_data, 2500, 0);//ø™ º…œ¥´ ˝æ›
+        os_timer_arm(&upload_data, 2500, 0);//ÂºÄÂßã‰∏ä‰º†Êï∞ÊçÆ
     }else
     {
+
         os_timer_disarm(&scan_timer);
         os_timer_arm(&scan_timer, 3000, 0);
+
+
+
+//        switch_to_wifi();
+
+
 //        update_data();
     }
 
 }
 
 
-void ICACHE_FLASH_ATTR
-uart_send(const uint8_t * buffer, uint16_t length)
-{
-	os_printf("UART Data send >>>\n");
-	uint16_t i = 0;
-
-	for (i = 0; i < length; i++) {
-		os_printf("%02X ", buffer[i]);
-	}
-
-	os_printf("\n");
-
-	queue_uart_send((char *)buffer, length);
-
-
-	os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
-}
 
 
 void ICACHE_FLASH_ATTR
 check_id(void)
 {
-    //‘Ÿ¥ŒªÒ»°id
-    create_http(4);
+    //ÂÜçÊ¨°Ëé∑Âèñid
+    if (wifi_station_get_connect_status() == STATION_GOT_IP) {
+        scan_qz=1;
+    }else scan_qz=0;
+    if(scan_qz == 1)
+    {
+        //            "deviceId":"Qingzhu-VQ000000000000","version":"0.000","wei":"0000.00000","lng":"00000.00000","time":"000000000000"}
+        // Build Body's JSON string
+
+        uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_GET_TAG) +
+                                               os_strlen(parameter_deviceId) +
+                                               os_strlen(parameter_version) +
+                                               os_strlen(parameter_latitude) +
+                                               os_strlen(parameter_longitude) +
+                                               os_strlen(parameter_timestamp)
+                                               );
+
+        if (body == NULL) {
+            VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
+            return;
+        }
+
+        os_sprintf(body,
+                   JSON_GET_TAG,
+                   parameter_deviceId,
+                   parameter_version,
+                   parameter_latitude,
+                   parameter_longitude,
+                   parameter_timestamp);
+
+        os_printf("body:%s\n",body);
+
+        uint8_t * url = NULL;
+        url = "http://221.122.119.226:8098/MacGather/getCollect";
+        void * ctx = NULL;
+        http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
+
+
+        if (body)
+            os_free(body);
+    }else
+    {
+        create_http(4);
+    }
+
 }
 
 void ICACHE_FLASH_ATTR
@@ -784,37 +1052,30 @@ start(void)
     sniffer_init_in_system_init_done();
 }
 
+
+
+
+//void ICACHE_FLASH_ATTR
+//update_white_list(void)
+//{
+//
+//        tcp_client_init(ap_ssid,ap_pwd);//OTAÂçáÁ∫ß
+//
+//
+//}
+
 void ICACHE_FLASH_ATTR
-resolution_times(void)
+check_update_firmware(uint8 type, uint8 num ,char *url)
 {
-    uint8_t i;
-    uint8_t * date_addr = NULL;
-    uint8_t mouth_ab[12][4]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"};
-    uint8_t mouth_num[12][3]={"01","02","03","04","05","06","07","08","09","10","11","12"};
-
-    char *p,*n;
-
-    for(i=0;i<12;i++)
+    os_printf("type:%d,num:%d\n",type,num);
+    if(local_system_status.version_type == version_type && local_system_status.version_num < version_num)
     {
-        p=mouth_ab[i];
-        n=mouth_num[i];
-        if(strstr(uart_receive_at,p))
-        {
-            os_memcpy(parameter_timestamp+8,n,2);//‘¬
-        }
+        os_memcpy(update_host,url,os_strlen(url));
+        tcp_client_init(ap_ssid,ap_pwd);//OTAÂçáÁ∫ß
+        post_state = OTA;
     }
 
-    date_addr = strstr(uart_receive_at,"Date:");
-
-    os_memcpy(parameter_timestamp+6,date_addr+11,2);//»’
-    os_memcpy(parameter_timestamp+10,date_addr+20,2);//ƒÍ
-    os_memcpy(parameter_timestamp,date_addr+23,2);// ±
-    os_memcpy(parameter_timestamp+2,date_addr+26,2);//∑÷
-    os_memcpy(parameter_timestamp+4,date_addr+29,2);//√Î
-
-    os_printf("parameter_timestamp %s\n",parameter_timestamp);
 }
-
 
 void ICACHE_FLASH_ATTR
 update_firmware(void)
@@ -842,7 +1103,7 @@ update_firmware(void)
         uint8_t url_len, i;
 
 //        local_system_status.version_num = version_num;
-        url_addr = strstr(uart_receive_at,"75726c");//url,ª∫¥Ê∑˛ŒÒ∆˜∑µªÿµƒURL£¨¥Ê∑≈–¬πÃº˛µƒ∑˛ŒÒ∆˜
+        url_addr = strstr(uart_receive_at,"75726c");//url,ÁºìÂ≠òÊúçÂä°Âô®ËøîÂõûÁöÑURLÔºåÂ≠òÊîæÊñ∞Âõ∫‰ª∂ÁöÑÊúçÂä°Âô®
         url_len = version_addr-url_addr-18;
         os_memcpy(url_temp,url_addr+12,url_len);
         url_temp[url_len] = '\0';
@@ -852,59 +1113,38 @@ update_firmware(void)
 
         os_printf("update_host %s \n",update_host);
 
-        //¥´µ›ap_ssid ap_pwd
-        tcp_client_init(ap_ssid,ap_pwd);//OTA…˝º∂
+        //‰º†ÈÄíap_ssid ap_pwd
+        tcp_client_init(ap_ssid,ap_pwd);//OTAÂçáÁ∫ß
     }else
     {
         os_timer_disarm(&check_id_timer);
         os_timer_arm(&check_id_timer, 120000, 1);
     }
-
 }
+
+
 void ICACHE_FLASH_ATTR
 receive_ok(void)
 {
     switch (at_state)
     {
     case LED:
-        //ºÏ≤‚µÁ≥ÿµÁ—π v*5.7,max(4.3V)=755,min(3.1V)=544
+        //Ê£ÄÊµãÁîµÊ±†ÁîµÂéã v*5.7,max(4.3V)=755,min(3.1V)=544
         os_memset(uart_receive_at,'\0',sizeof(char)*2048);
         queue_uart_send(read_adc,os_strlen(read_adc));
         os_printf("send %s\n",read_adc);
         at_state = ZADC;
         break;
 
-    case ZADC:  //ºÏ≤‚µÁ≥ÿµÁ—π v*5.7,max(4.3V)=755,min(3.1V)=544
+    case ZADC:  //Ê£ÄÊµãÁîµÊ±†ÁîµÂéã v*5.7,max(4.3V)=755,min(3.1V)=544
         z_adc = (uart_receive_at[6]-48)*100+(uart_receive_at[7]-48)*10+uart_receive_at[8]-48;
-        uint8_t src[6], i, mac_address_str[12];
+
         if(z_adc>544)
         {
-            if (wifi_get_macaddr(STATION_IF, src))//ªÒ»°macµÿ÷∑
-            {
-                for(i=0; i< 12; i++)
-                {
-                    mac_address_str[i]   = (src[i/2] >> 4) & 0xf;
-                    mac_address_str[i+1] =  src[i/2] & 0xf;
-                    i++;
-                }
-
-                for(i=0; i< 12; i++){
-                    if( mac_address_str[i] < 10)
-                        mac_address_str[i] += 48;
-                    else
-                        mac_address_str[i] += 55;
-                }
-                os_memcpy(parameter_deviceId + 10, mac_address_str, 12);
-
-                os_printf("deviceid %s\n",parameter_deviceId);
-                strhex_to_str(parameter_deviceId,1);
-
-                //ªÒ»° ±º‰
-                queue_uart_send(cclk,os_strlen(cclk));
-                os_printf("send %s\n",cclk);
-                at_state = CCLK;
-
-            }else system_restart();
+            //Ëé∑ÂèñÊó∂Èó¥
+            queue_uart_send(cclk,os_strlen(cclk));
+            os_printf("send %s\n",cclk);
+            at_state = CCLK;
         }else delay_power_off();
         break;
 
@@ -913,12 +1153,21 @@ receive_ok(void)
 
         os_printf("clk parameter_timestamp %s \n",parameter_timestamp);
 
-        //µ»¥˝ªÿ”¶£∫Œ¥∞Û∂®/∂®Œª¥ÌŒÛ
-        if(creat_flag == 0)
-            create_http(0);
-        else//‘Ÿ¥ŒªÒ»°id
-        {
-            create_http(4);
+
+        //Êü•ËØ¢ ESP8266 WiFi station Êé•Âè£ËøûÊé• AP ÁöÑÁä∂ÊÄÅ
+        if (wifi_station_get_connect_status() == STATION_GOT_IP) {
+            scan_qz=1;
+            if(creat_flag == 0)
+                create_http(0);
+            check_id();
+        }else{
+            //Á≠âÂæÖÂõûÂ∫îÔºöÊú™ÁªëÂÆö/ÂÆö‰ΩçÈîôËØØ
+            if(creat_flag == 0)
+                create_http(0);
+            else//ÂÜçÊ¨°Ëé∑Âèñid
+            {
+                create_http(4);
+            }
         }
         break;
 
@@ -931,7 +1180,7 @@ receive_ok(void)
 
     case ZOFF:
         os_printf("NB turned off, now system turn off\n");
-//            delay_power_on();//πÿª˙
+//            delay_power_on();//ÂÖ≥Êú∫
         shut_down_flag = 1;
 //                os_timer_disarm(&temer_90s);
         power_on();
@@ -970,7 +1219,7 @@ receive_ok(void)
         }
 
         start();
-        at_state = NONE;
+        at_state = WAIT;
         break;
 
     case HTTP_CON:
@@ -1030,7 +1279,7 @@ receive_ok(void)
 
         os_printf("send done\n");
         gnrmc_gps_flag = 0;
-        at_state = NONE;
+        at_state = WAIT;
         break;
 
     case HTTP_DISCON:
@@ -1054,14 +1303,31 @@ get_indoor_position(void)
     uint8_t i;
     uint8_t * lon_addr = NULL;
     uint8_t mmac_str[72];
-
-    lon_addr = strstr(uart_receive_at,"2c226c6f6e22");//lon
+//7b22636f6465223a2230222c226c6f6e223a2231313631382e3032393832222c226c6174223a22333935392e3030323539222c226d6163223a22323436393638463844413946463845373145314545303538384341423845414136303238227d
+//7b22636f6465223a2230222c226c6f6e223a2231313631382e3031353939222c226c6174223a22333935392e3030313331222c226d6163223a22463845373145314544444238323436393638463844413946463845373145314545303538227d
+// { " c o d e " : " 0 " , " l o n " : " 1 1 6 1 8 . 0 1 5 9 9 " , " l a t " : " 3 9 5 9 . 0 0 1 3 1 " , " m a c " : " F 8 E 7 1 E 1 E D D B 8 2 4 6 9 6 8 F 8 D A 9 F F 8 E 7 1 E 1 E E 0 5 8 " }
+    lon_addr = strstr(uart_receive_at,"2c226c6f6e22");//"lon"
     mmac_str[72]='\0';
 
     os_memcpy(mmac_str, lon_addr+96 , 72);
     os_printf("mmac_str %s\n",&mmac_str);
 
+    if(strstr(uart_receive_at,"226c6f6e223a2230303030302e303030303022"))
+    {
 
+    }else{
+        for(i=0;i<11;i++)
+        {
+            parameter_longitude[i] = *(lon_addr+17+i*2);
+        }
+        parameter_longitude[5] = '.';
+        for(i=0;i<10;i++)
+        {
+            parameter_latitude[i] = *(lon_addr+57+i*2);
+        }
+        parameter_latitude[4] = '.';
+    }
+    os_printf("parameter_longitude=%s\nparameter_latitude=%s\n",parameter_longitude,parameter_latitude);
 
     os_memcpy(http_get_tag+246, lon_addr+16, 22);
     os_memcpy(http_get_tag+208, lon_addr+56, 20);
@@ -1101,14 +1367,14 @@ get_indoor_position(void)
                apmac_rssi[i][3], apmac_rssi[i][4], apmac_rssi[i][5],
                apmac_rssi[i][6],apmac_rssi[i][7] );
     }
-    resolution_times();
+
 
 }
 
 
 
 //void ICACHE_FLASH_ATTR
-//qz_dns(void)//Ω‚Œˆ«Â÷Ò”Ú√˚
+//qz_dns(void)//Ëß£ÊûêÊ∏ÖÁ´πÂüüÂêç
 //{
 //    uint8_t total_len,i;
 //    char * ip_addr = NULL;
@@ -1144,11 +1410,18 @@ get_indoor_position(void)
 void ICACHE_FLASH_ATTR
 uart_receive(const uint8_t * pdata, uint16_t length)
 {
-    os_timer_disarm(&check_id_timer);
-    os_timer_arm(&check_id_timer, 120000, 1);
+    if (wifi_station_get_connect_status() == STATION_GOT_IP) {
+        scan_qz=1;
+    }else scan_qz=0;
+    if(scan_qz == 0)
+    {
+        os_timer_disarm(&check_id_timer);
+        os_timer_arm(&check_id_timer, 120000, 1);
 
-    os_timer_disarm(&restart_nb);
-    os_timer_arm(&restart_nb, 180000, 1);//3∑÷÷”∫Û√ª”– ’µΩ ˝æ›£¨÷ÿ∆Ù
+        os_timer_disarm(&restart_nb);
+        os_timer_arm(&restart_nb, 180000, 1);//3ÂàÜÈíüÂêéÊ≤°ÊúâÊî∂Âà∞Êï∞ÊçÆÔºåÈáçÂêØ
+    }
+
 
 	os_printf("+++++++++++UART Data received+++++++++++++\n");
 	uint8_t end[1] = {'\0'};
@@ -1161,20 +1434,43 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
     {
 
+        if(os_strstr(uart_receive_at,"Date:"))
+        {
+            resolution_times(uart_receive_at);
+        }
+
+//"+CESQ: 22,6,255,255,12,45"
+        if(os_strstr(uart_receive_at,"+CESQ"))
+        {
+            uint8_t * addr1 = NULL;
+            uint8_t * addr2 = NULL;
+            addr1 = strstr(uart_receive_at,":");
+            addr2 = strstr(uart_receive_at,",");
+            if(addr2-addr1 == 3 || (*(addr2-2))==0x39)
+            {
+                nb_signal_bad = 1;
+                switch_to_wifi();
+            }
+            else
+                nb_signal_bad = 0;
+        }
 
         // Send back what received
     //	uart_send(pdata, length);
 //        os_memset(uart_receive_at,'\0',sizeof(char)*2048);
 //        os_memcpy(uart_receive_at,pdata,length);
 
+        if(os_strstr(uart_receive_at,"+CPIN: READY"))
+        {
+            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
+            queue_uart_send(ipr,os_strlen(ipr));
+        }
 
         if(os_strstr(uart_receive_at,"+IP:"))
         {
 
-//            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-//            queue_uart_send(edns,os_strlen(edns));
-//            os_printf("send %s\n",edns);
-//            at_state = EDNS;
+            os_timer_disarm(&wait_nb_con_timer);
+
             uint8_t i;
 
             os_memset(uart_receive_at,'\0',sizeof(char)*2048);
@@ -1182,8 +1478,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             at_state = LED;
             os_printf("send %s\n",con_led);
 
-            for(i=0;i<12;i++)
-                parameter_timestamp[i] = '0';
+
             return;
         }
 
@@ -1205,7 +1500,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             return;
         }
 
-        if(os_strstr(uart_receive_at,"+EHTTPERR:0"))//0 «øÕªß∂À±‡∫≈
+        if(os_strstr(uart_receive_at,"+EHTTPERR:0"))//0ÊòØÂÆ¢Êà∑Á´ØÁºñÂè∑
         {
             http_dis = 1;
             return;
@@ -1282,7 +1577,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
 
 
-        if(os_strstr(uart_receive_at,"+EHTTPNMIC:"))//∑˛ŒÒ∆˜”–œÏ”¶
+        if(os_strstr(uart_receive_at,"+EHTTPNMIC:"))//ÊúçÂä°Âô®ÊúâÂìçÂ∫î
         {
             if(os_strstr(uart_receive_at,"2264657363223a2273756363657373227d"))
             {
@@ -1297,7 +1592,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 led_state = 5;
                 devicexx_io_led_timer_tick();
 //                send_flag = 0;
-                //ºÏ≤‚µÁ≥ÿµÁ—π v*5.7,max(4.3V)=755,min(3.1V)=544
+                //Ê£ÄÊµãÁîµÊ±†ÁîµÂéã v*5.7,max(4.3V)=755,min(3.1V)=544
                 os_memset(uart_receive_at,'\0',sizeof(char)*2048);
                 queue_uart_send(read_adc,os_strlen(read_adc));
                 at_state = ZADC;
@@ -1305,13 +1600,13 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
             }else if(os_strstr(uart_receive_at,"e59cb0e79086e58cbae59f9fe5a496")||os_strstr(uart_receive_at,"e5bd93e5898de697a0e4bbbbe58aa1")||os_strstr(uart_receive_at,"e58f82e695b0e4b8bae7a9ba"))
             {
-                //µÿ¿Ì«¯”ÚÕ‚         µ±«∞Œﬁ»ŒŒÒ       ≤Œ ˝Œ™ø’
+                //Âú∞ÁêÜÂå∫ÂüüÂ§ñ         ÂΩìÂâçÊó†‰ªªÂä°       ÂèÇÊï∞‰∏∫Á©∫
                 os_timer_disarm(&check_id_timer);
                 os_timer_arm(&check_id_timer, 120000, 1);
                 led_state = 5;
                 devicexx_io_led_timer_tick();
-//                delay_power_off();//πÿª˙
-            }else if(os_strstr(uart_receive_at,"636f6c6c6563744964"))//ªÒµ√id,≤È—Ø∞Ê±æ
+//                delay_power_off();//ÂÖ≥Êú∫
+            }else if(os_strstr(uart_receive_at,"636f6c6c6563744964"))//Ëé∑Âæóid,Êü•ËØ¢ÁâàÊú¨
             {
 
                 uint8_t i,istime[1],issite[1];
@@ -1321,7 +1616,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
 
 
-                wifi_set_opmode(STATION_MODE);
+//                wifi_set_opmode(STATION_MODE);
 
                 cid_addr = strstr(uart_receive_at,"22636f6c6c656374496422");//"collectId"
                 os_memcpy(temp_tag,cid_addr+26,22);
@@ -1362,9 +1657,9 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 at_state = NONE;
                 os_printf("tag %s\n",parameter_tag);
 
-                if(0 != os_strcmp(parameter_tag,"00000000000") && istime[0] == 48)//≤ªµ»”⁄00000000
+                if(0 != os_strcmp(parameter_tag,"00000000000") && istime[0] == 48)//‰∏çÁ≠â‰∫é00000000
                 {
-                    get_tag_flag = 1;//ªÒµ√»ŒŒÒID±Í÷æ
+                    get_tag_flag = 1;//Ëé∑Âæó‰ªªÂä°IDÊ†áÂøó
                     os_timer_disarm(&check_id_timer);
 
 
@@ -1373,16 +1668,17 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                     at_state = ZGMODE;
 
 
-                }else if(istime[0] == 49 || issite[0] == 49 )//¥À ±√ª”–»ŒŒÒ£¨‘Ÿ≈–∂œ «∑Òƒ‹…˝º∂°£0‘⁄£ª1≤ª‘⁄
+                }else if(istime[0] == 49 || issite[0] == 49 )//Ê≠§Êó∂Ê≤°Êúâ‰ªªÂä°ÔºåÂÜçÂà§Êñ≠ÊòØÂê¶ËÉΩÂçáÁ∫ß„ÄÇ0Âú®Ôºõ1‰∏çÂú®
                 {
                     os_timer_disarm(&restart_nb);
-//                    uint8_t remote_ip[4] = {221,122,119,226};//ƒø±ÍIPµÿ÷∑,±ÿ–Î“™œ»¥” ÷ª˙ªÒ»°£¨∑Ò‘Ú¡¨Ω” ß∞‹.
+//                    uint8_t remote_ip[4] = {221,122,119,226};//ÁõÆÊ†áIPÂú∞ÂùÄ,ÂøÖÈ°ªË¶ÅÂÖà‰ªéÊâãÊú∫Ëé∑ÂèñÔºåÂê¶ÂàôËøûÊé•Â§±Ë¥•.
 //                    ota_start_upgrade(remote_ip, 80, "");
                     wifi_state = 0;
                     update_firmware();
 
+
                 }
-                if(0 == os_strcmp(parameter_tag,"00000000000") || istime[0] == 49)//µ»”⁄00000000
+                if(0 == os_strcmp(parameter_tag,"00000000000") || istime[0] == 49)//Á≠â‰∫é00000000
                 {
                     get_tag_flag=0;
 
@@ -1395,24 +1691,24 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                     }
                 }
                 os_timer_disarm(&restart_nb);
-                os_timer_arm(&restart_nb, 185000, 1);//3∑÷÷”∫Û√ª”– ’µΩ ˝æ›£¨÷ÿ∆Ù
+                os_timer_arm(&restart_nb, 185000, 1);//3ÂàÜÈíüÂêéÊ≤°ÊúâÊî∂Âà∞Êï∞ÊçÆÔºåÈáçÂêØ
 
 
             }
-            else if(os_strstr(uart_receive_at,"2c226c6f6e223a22"))//∑µªÿ “ƒ⁄∂®Œªæ≠Œ≥∂»
+            else if(os_strstr(uart_receive_at,"2c226c6f6e223a22"))//ËøîÂõûÂÆ§ÂÜÖÂÆö‰ΩçÁªèÁ∫¨Â∫¶
             {
                 get_indoor_position();
 
             }
 
-            else if(os_strstr(uart_receive_at,"e5ae9ae4bd8de99499e8afaf"))//∂®Œª¥ÌŒÛ
+            else if(os_strstr(uart_receive_at,"e5ae9ae4bd8de99499e8afaf"))//ÂÆö‰ΩçÈîôËØØ
             {
                 queue_uart_send(zgmode,os_strlen(zgmode));
                 os_printf("send %s\n",zgmode);
                 at_state = ZGMODE;
 
             }
-            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//…Ë±∏Œ¥ π”√£∫ ˝æ›ø‚√ª”–’‚∏ˆ…Ë±∏£ªŒ¥∞Û∂®£∫ ˝æ›ø‚”–…Ë±∏µ´ «Œ™πÿ¡™¥˙¿Ì…Ã
+            else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//ËÆæÂ§áÊú™‰ΩøÁî®ÔºöÊï∞ÊçÆÂ∫ìÊ≤°ÊúâËøô‰∏™ËÆæÂ§áÔºõÊú™ÁªëÂÆöÔºöÊï∞ÊçÆÂ∫ìÊúâËÆæÂ§á‰ΩÜÊòØ‰∏∫ÂÖ≥ËÅî‰ª£ÁêÜÂïÜ
             {
 //                bind_flag = 0;
                 at_state = WAIT;
@@ -1422,42 +1718,14 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 led_state = 3;
                 devicexx_io_led_timer_tick();
 #endif
-                wifi_set_opmode(SOFTAP_MODE);
-                vowstar_set_ssid_prefix("Qingzhu_VQ_");
-                tcp_server();
+//                wifi_set_opmode(SOFTAP_MODE);
+//                vowstar_set_ssid_prefix("Qingzhu_VQ_");
+//                tcp_server();
 
                 os_timer_disarm(&restart_nb);
 
-            }else if(os_strstr(uart_receive_at,"e8aebee5a487e5b7b2e7bb91e5ae9a"))//
-            {
-                os_timer_disarm(&restart_nb);
-                os_timer_disarm(&bind_timeout);
-                char *binded="…Ë±∏“—∞Û∂®,«Îœ»Ω‚∞Û";
-                os_memcpy(http_answer+206,binded,19);
-
-            }else if(os_strstr(uart_receive_at,"e8b4a6e58fb7e5af86e7a081e4b88de58cb9e9858d"))//’À∫≈√‹¬Î≤ª∆•≈‰
-            {
-                os_timer_disarm(&restart_nb);
-                os_timer_disarm(&bind_timeout);
-                char *not_match="’À∫≈√‹¬Î≤ª∆•≈‰";
-                os_memcpy(http_answer+206,not_match,14);
-                os_printf("http_head = %s\n",http_answer);
-            }else if(os_strstr(uart_receive_at,"62696e6473756363657373"))//…Ë±∏∞Û∂®≥…π¶
-            {
-                os_timer_disarm(&bind_timeout);
-                char *bind_success="…Ë±∏∞Û∂®≥…π¶";
-                os_memcpy(http_answer+206,bind_success,12);
-                os_printf("http_head = %s\n",http_answer);
-                led_state = 5;
-                devicexx_io_led_timer_tick();
-                //‘Ÿ¥ŒªÒ»°id
-                queue_uart_send(http_get_tag,os_strlen(http_get_tag));
-                os_printf("send %s\n",http_get_tag);
-                at_state = WAIT;
-
-                os_timer_disarm(&devicexx_io_led_timer);
-            }else
-
+            }
+            else
             {
 //                os_printf("{\"code\":\"1\",\"desc\":\"error\"}\n");
 //                os_printf("{\"code\":\"1\",\"desc\":\"error\"}\n");
@@ -1471,7 +1739,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 queue_uart_send(http_get_tag,os_strlen(http_get_tag));
                 os_printf("send %s\n",http_get_tag);
                 at_state = WAIT;
-//                //ºÏ≤‚µÁ≥ÿµÁ—π v*5.7,max(4.3V)=755,min(3.1V)=544
+//                //Ê£ÄÊµãÁîµÊ±†ÁîµÂéã v*5.7,max(4.3V)=755,min(3.1V)=544
 //                os_memset(uart_receive_at,'\0',sizeof(char)*2048);
 //                queue_uart_send(read_adc,os_strlen(read_adc));
 //                at_state = ZADC;
@@ -1480,9 +1748,6 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
             os_printf("tag %s\n",parameter_tag);
 
-//            os_memset(uart_receive_at,'\0',sizeof(char)*2048);
-//            queue_uart_send(http_discon,os_strlen(http_discon));
-//            os_printf("send %s\n",http_discon);
 
             return;
 
@@ -1512,7 +1777,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
 //   $GNRMC,080457.14,A,3958.99017,N,11618.03480,E,1.770,,070319,,,A,V*16
 //                os_printf("receive %s\n",uart_receive_at);
-//¡Ÿ ±
+//‰∏¥Êó∂
                 os_memcpy(parameter_longitude,gnrmc_addr + 32, os_strlen(parameter_longitude));
                 os_memcpy(parameter_latitude, gnrmc_addr + 19 , os_strlen(parameter_latitude));
 
@@ -1526,13 +1791,13 @@ uart_receive(const uint8_t * pdata, uint16_t length)
                 {
                 	for(i=0;i<12;i++)
                 		parameter_timestamp[i] = '0';
-                }else
-                {
-                    os_memcpy(parameter_timestamp, gnrmc_addr + 7 , 6);
-                    os_memcpy(parameter_timestamp+6, gnrmc_addr + 53 ,6);
-                    strhex_to_str(parameter_timestamp,5);
-
                 }
+                st1 = system_get_time()/1000000000;
+                os_memcpy(parameter_timestamp, gnrmc_addr + 7 , 6);
+                os_memcpy(parameter_timestamp+6, gnrmc_addr + 53 ,6);
+                strhex_to_str(parameter_timestamp,5);
+
+
                 os_printf("parameter_longitude=%s\nparameter_latitude=%s\nparameter_timestamp=%s\ncreat_flag=%d\n"
                                         ,parameter_longitude,parameter_latitude,parameter_timestamp,creat_flag);
 
@@ -1541,7 +1806,7 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 //                    create_http(0);
 //                else
 //                {
-//                    //‘Ÿ¥ŒªÒ»°id
+//                    //ÂÜçÊ¨°Ëé∑Âèñid
 //                    queue_uart_send(http_get_tag,os_strlen(http_get_tag));
 //                    os_printf("send %s\n",http_get_tag);
 //                    at_state = WAIT;
@@ -1577,33 +1842,12 @@ uart_receive(const uint8_t * pdata, uint16_t length)
         }
 
 
-//        os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
+        os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
 	}
 
 }
 
-void ICACHE_FLASH_ATTR
-devicexx_receive(const d_object_t* object)
-{
-	d_object_t * data = devicexx_object_create();
 
-	if (devicexx_receive_get(object, "s")) {
-		os_printf("cloud try get hardware value: s\r\n");
-		devicexx_add_int(data, "s", devicexx_io_get_relay_state());
-		devicexx_send(data);
-	}
-
-	if (devicexx_receive_int(object, "s")) {
-		os_printf("cloud try set hardware int value: s\r\n");
-		devicexx_io_set_relay_state((uint8_t) devicexx_value_int(object, "s"));
-		devicexx_io_set_led_state(devicexx_io_get_relay_state());
-		devicexx_add_int(data, "s", devicexx_io_get_relay_state());
-		devicexx_send(data);
-	}
-
-	devicexx_object_delete(data);
-	os_printf("%s: memory left=%d\r\n", __func__, system_get_free_heap_size());
-}
 
 void ICACHE_FLASH_ATTR
 devicexx_app_apply_settings(void)
@@ -1625,7 +1869,7 @@ devicexx_app_load(void)
 	    0,
 	    (void *)(&local_system_status),
 	    sizeof(local_system_status));
-//flash ≤¡≥˝÷√1, ≥ˆ≥ßµ⁄“ª¥Œ∆Ù∂Ø∏¯type num ∏≥÷µ
+//flash Êì¶Èô§ÁΩÆ1, Âá∫ÂéÇÁ¨¨‰∏ÄÊ¨°ÂêØÂä®Áªôtype num ËµãÂÄº
 	if(local_system_status.version_type == 0xff && local_system_status.version_num == 0xffff)
 	{
 		local_system_status.version_type = 0;

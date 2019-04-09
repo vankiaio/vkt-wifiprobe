@@ -9,6 +9,9 @@
 #include "devicexx_app.h"
 #include "queue_uart.h"
 #include "httpclient.h"
+#include "cJSON.h"
+#include "platform.h"
+//#include "source.h"
 //#include "at_custom.h"
 
 os_timer_t checkTimer_wifistate;
@@ -20,6 +23,8 @@ struct station_config stationConf;
 uint8_t wifi_state = 0;
 uint8_t connet_flag = 0;
 uint8_t count = 0;
+
+//typedef void (* http_callback_t)(void * ctx, char * response_body, size_t body_size, int http_status, char * response_headers);
 
 typedef struct request_args_t {
 	char            * hostname;
@@ -38,227 +43,139 @@ typedef struct request_args_t {
 
 
 
-uint8_t http_head[] = {
-   "HTTP/1.0 200 OK\r\n"\
-   "Content-Type: text/html;charset=gbk\r\n"\
-   "Cache-Control: private\r\n"\
-   "Connection: close\r\n"\
-   "\r\n"\
-   "<!DOCTYPE html>"\
-   "<html>"\
-   "<head>"\
-   "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=gbk\">"\
-   "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">"\
-   "<meta name=\"viewport\" content=\"width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;\">"\
-   "<meta name=\"renderer\" content=\"webkit|ie-comp|ie-stand\">"\
-   "<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">"\
-   "<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black\">"\
-   "<meta name=\"format-detection\" content=\"telephone=no\">"\
-   "<meta content=\"email=no\" name=\"format-detection\" />"\
-   "<title></title>"\
-   "</head>"\
-   "<style type=\"text/css\">"\
-   "body{overflow-x:hidden;}"\
-   "img{width: 100%;display: block;}"\
-   "</style>"\
-   "<body>"\
-   "<form action=\"\" method=\"post\" style=\"width:100%;text-align:center;margin-top: 10%;\">"\
-   "<h3><span style=\"color:BlueViolet\">清竹大数据</span>SmartBox</h3>"
-   "<input type=\"text\" id=\"loginName\"  placeholder=\"请输入您的用户名\" style=\"width:200px;height:30px\"><br/></br>"\
-   "<input type=\"password\" id=\"loginPwd\"  placeholder=\"请输入您的密码\" style=\"width:200px;height:30px\"><br/></br>"\
-   "<button type=\"button\" id=\"loginbtn\" style=\"width:100px;height:30px\">绑定</button>"
-   "<div id='tip'>                     </div>"\
-   "</form>"\
-   "<script language=\"javascript\">"\
-   "var loginName = document.getElementById('loginName');"\
-   "var loginPwd = document.getElementById('loginPwd');"\
-   "var i = 0;"\
-   "function reset() {"\
-   "    var xhr = new XMLHttpRequest();"\
-   "    xhr.open('GET', 'http://192.168.4.1/getAnswer', true);"\
-   "    xhr.send();"\
-   "    xhr.onreadystatechange = function() {"\
-   "        if (xhr.status == 200) {"\
-   "            if((xhr.responseText!=null)&&(xhr.responseText!='')&&!(xhr.responseText.indexOf('answer')>=0)){"\
-   "                         i=1;"\
-   "                         var tip = document.getElementById('tip');"\
-   "                         tip.innerHTML=xhr.responseText;"\
-   "                      }"\
-   "        }"\
-   "    };"\
-   "}"\
-   "function resetTime() {"\
-   "    var xhr = new XMLHttpRequest();"\
-   "    xhr.open('POST', 'http://192.168.4.1', true);"\
-   "    xhr.send('loginName=' + loginName.value + '&loginPwd=' + loginPwd.value+\"&submit=\");"\
-   "    xhr.onreadystatechange = function() {"\
-   "        if (xhr.status == 200) {"\
-   "            setInterval(function () {"\
-   "                if(i==0){"\
-   "                    reset();"\
-   "                }"\
-   "            }, 2000);"\
-   "        }"\
-   "    };"\
-   "}"\
-   "var oDiv = document.getElementById('loginbtn');"\
-   "oDiv.onclick = function() {"\
-   "    i = 0;"\
-   "    var tip = document.getElementById('tip');"\
-   "    tip.innerHTML='<p>验证中请稍后</p>';"\
-   "    resetTime();}"\
-   "</script>"\
-   "</body>"\
-   "</html>"\
-   ""
-};
-
-
-uint8_t http_answer[] = {
-    "HTTP/1.0 200 OK\r\n"\
-    "Content-Type: text/html;charset=gbk\r\n"\
-    "Cache-Control: private\r\n"\
-    "Connection: close\r\n"\
-    "\r\n"\
-    "<!DOCTYPE html>"\
-    "<html>"\
-    "<head>"\
-    "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=gbk\">"\
-    "</head>"\
-    "<body>"\
-    "<p>answer             </p>"\
-    "</body>"\
-    "</html>"\
-};
-
-uint8_t http_response[] = {
-    "HTTP/1.0 200 OK\r\n"\
-    "Content-Type: text/html;charset=gbk\r\n"\
-    "Cache-Control: private\r\n"\
-    "Connection: close\r\n"\
-};
-
-
 
 void ICACHE_FLASH_ATTR
-tcpserver_recon_cb(void *arg, sint8 errType)//异常断开回调
+post_callback(void * ctx, char * response_body, size_t response_body_size, int http_status, char * response_headers)
 {
-    struct espconn *pespconn = (struct espconn *)arg;
-    os_printf("\r\n异常断开");
-}
-
-
-void ICACHE_FLASH_ATTR
-tcpserver_discon_cb(void *arg)//正常断开回调
-{
-    struct espconn *pespconn = (struct espconn *)arg;
-    os_printf("\r\n正常断开");
-}
-
-
-void ICACHE_FLASH_ATTR
-tcpclient_sent_cb(void *arg)//发送回调
-{
-    struct espconn *pespconn = (struct espconn *)arg;
-
-
-    if(connet_flag == 0)
+    uint16_t i;
+    os_printf("%s: status:%d\n", __func__, http_status);
+    if(http_status == -1)
     {
-        os_printf("回调断开\n");
-        espconn_disconnect(pespconn);//断开连接
+        scan_qz=0;
+        wifi_station_disconnect();
+        return;
     }
-    os_printf("\r\n发送回调");
-}
+    if ((NULL != response_body) && (0 != response_body_size) && (NULL != response_headers)) {
+        if (200 == http_status) {
+            // Process and try encrypt data
+            for(i=0;i<response_body_size-1;i++)
+            {
+                os_printf("%c",response_body[i]);
+            }
+            os_printf("\n");
+
+//            // Parse root data
+            cJSON * json_root = cJSON_Parse(response_body);
+
+            // Check json root
+            if ((NULL != json_root) && (cJSON_Object == json_root->type)) {
+                cJSON * json_code = cJSON_GetObjectItem(json_root, "code");
+
+
+                cJSON * json_desc = cJSON_GetObjectItem(json_root, "desc");
+
+
+                cJSON * json_lon = cJSON_GetObjectItem(json_root, "lon");
+                cJSON * json_lat = cJSON_GetObjectItem(json_root, "lat");
+
+                cJSON * json_mac = cJSON_GetObjectItem(json_root, "mac");
+                cJSON * json_excludeMac = cJSON_GetObjectItem(json_root, "excludeMac");
+//
+
+                cJSON * json_url = cJSON_GetObjectItem(json_root, "url");
+                cJSON * json_version = cJSON_GetObjectItem(json_root, "version");
+                cJSON * json_collectId = cJSON_GetObjectItem(json_root, "collectId");
+                cJSON * json_isCorrectTime = cJSON_GetObjectItem(json_root, "isCorrectTime");
+                cJSON * json_isLocation = cJSON_GetObjectItem(json_root, "isLocation");
+//
+                cJSON * json_fixedId = cJSON_GetObjectItem(json_root, "fixedId");
+                cJSON * json_isFixedTime = cJSON_GetObjectItem(json_root, "isFixedTime");
 
 
 
-void ICACHE_FLASH_ATTR
-tcpserver_recv(void *arg, char *pdata, unsigned short len)//接收函数
-{
-    count++;
-    os_printf("\n\n+++++++++++++++++++count = %d\n",count);
+                if(NULL != json_code       && NULL != json_collectId    && NULL != json_isCorrectTime &&
+                   NULL != json_isLocation && NULL != json_url          && NULL != json_version &&
+                   NULL != json_fixedId    && NULL != json_isFixedTime)
+                {
+                    os_printf("json_code:%s\n",         json_code->valuestring);
+                    os_printf("json_collectId:%s\n",    json_collectId->valuestring);
+                    os_printf("json_url:%s\n",          json_url->valuestring);
+                    os_printf("json_isCorrectTime:%s\n",json_isCorrectTime->valuestring);
+                    os_printf("json_isLocation:%s\n",   json_isLocation->valuestring);
+                    os_printf("json_version:%s\n",      json_version->valuestring);
+                    os_printf("json_fixedId:%s\n",      json_fixedId->valuestring);
+                    os_printf("json_isFixedTime:%s\n",  json_isFixedTime->valuestring);
 
-    char * http_flg = NULL;
-    char * name_addr = NULL;
-    char * pwd_addr  = NULL;
-    char * sub_addr  = NULL;
-    uint8_t i,name_len = 0, pwd_len = 0;
-
-    struct espconn *pespconn = (struct espconn *)arg;
-    os_printf("\r\n接收函数,%s\n",pdata);
-
-    http_flg = strstr(pdata,"loginName");
-
-    if (http_flg != NULL)
-    {
+                    uint8_t version_temp[5] ;//0.000
+                    os_memcpy(version_temp,json_version->valuestring,5);
+                    version_type=version_temp[0]-48;
+                    version_num =(version_temp[2]-48)*100+(version_temp[3]-48)*10+version_temp[4]-48;
 
 
-        name_addr = strstr(pdata,"loginName");
-        pwd_addr = strstr(pdata,"&loginPwd");
-        sub_addr = strstr(pdata,"&submit=");
+                    if((0 != os_strcmp((json_collectId->valuestring),"00000000000")) &&
+                            (0 != os_strcmp((json_isCorrectTime->valuestring),"1")))
+                    {
 
-        name_len = pwd_addr-name_addr-10;
-        pwd_len  = sub_addr-pwd_addr-10;
+                        os_memcpy(parameter_tag,json_collectId->valuestring,os_strlen(parameter_tag));
+                        queue_uart_send(zgmode,os_strlen(zgmode));
+                        os_printf("send %s\n",zgmode);
+                        at_state = ZGMODE;
 
-        os_printf("\nname_len=%d,pwd_len=%d\n",name_len,pwd_len);
-        os_memcpy(loginName,name_addr+10,name_len);
-        os_memcpy(loginPwd,pwd_addr+10,pwd_len);
+                    }else if(0 == os_strcmp((json_isCorrectTime->valuestring),"1"))
+                    {
+                        check_update_firmware(version_type,version_num,json_url->valuestring);
+                    }else
+                    {
+                        os_timer_disarm(&check_id_timer);
+                        os_timer_arm(&check_id_timer, 120000, 1);
+                    }
 
-        loginName[name_len] = '\0';
-        loginPwd[pwd_len] = '\0';
-        os_printf("\n%s    %s\n",loginName,loginPwd);
+                    if((0 != os_strcmp((json_fixedId->valuestring),"00000000000")) &&
+                       (0 != os_strcmp((json_isFixedTime->valuestring),"1")))       //开通固定画像功能
+                    {
+                        isFixedTime[0]=48;
+                        os_memcpy(fixedId,json_fixedId->valuestring,os_strlen(fixedId));
+                    }
 
-        if(0!=os_strcmp(loginName,"") || 0!=os_strcmp(loginPwd,"")) {
-            connet_flag = 0;
-            update_post_bind();
-            espconn_send(pespconn,http_response,sizeof(http_response));
-        }
 
-    } else {
-        http_flg = strstr(pdata,"getAnswer");
+                }else if(NULL != json_code       && NULL != json_lon    && NULL != json_lat &&
+                         NULL != json_mac        && NULL != json_excludeMac)
+                {
+                    os_printf("json_code:%s\n",         json_code->valuestring);
+                    os_printf("json_lon:%s\n",          json_lon->valuestring);
+                    os_printf("json_lat:%s\n",          json_lat->valuestring);
+                    os_printf("json_mac:%s\n",          json_mac->valuestring);
+                    os_printf("json_excludeMac:%s\n",   json_excludeMac->valuestring);
 
-        if(http_flg != NULL){
-            os_printf("发现 getAnswer\n");
-            char *default_str="answer        ";
+                    os_memcpy(parameter_latitude,json_lat->valuestring,os_strlen(parameter_latitude));
+                    os_memcpy(parameter_longitude,json_lon->valuestring,os_strlen(parameter_longitude));
 
-            espconn_send(pespconn,http_answer,sizeof(http_answer));
+                    os_printf("update_data called\n");
+                    update_data();
 
-            os_memcpy(http_answer+206,default_str,14);
+                }else if(NULL != json_code && NULL != json_desc)
+                {
+                    if(0 == os_strcmp(json_desc->valuestring,"success") || 0 == os_strcmp(json_desc->valuestring,"false"))
+                    {
+                        os_timer_disarm(&delay_update_timer);
+                        post_state = CHECK_ID;
+                        check_id();
+                    }
 
-        }else {
-                espconn_send(pespconn,http_head,sizeof(http_head));
+                }
+
+
+                os_timer_disarm(&restart_nb);
+
+            } else {
+                os_printf("%s: Error when parse JSON\r\n", __func__);
+            }
+            cJSON_Delete(json_root);
+        } else {
+            response_body[response_body_size] = '\0';
+            os_printf("%s: error:\n%s\n", __func__, response_body);
         }
     }
-}
-
-void ICACHE_FLASH_ATTR
-tcpserver_listen(void *arg)//服务器被链接回调
-{
-    struct espconn *pespconn = (struct espconn *)arg;
-
-    espconn_regist_reconcb(pespconn, tcpserver_recon_cb);//开启异常断开回调
-    espconn_regist_disconcb(pespconn, tcpserver_discon_cb);//开启正常断开回调
-    espconn_regist_recvcb(pespconn, tcpserver_recv);//开启接收回调
-    espconn_regist_sentcb(pespconn, tcpclient_sent_cb);//开启发送成功回调
-}
-
-
-void ICACHE_FLASH_ATTR
-tcp_server(void)//开启tcp服务器
-{
-    tcpserver.proto.tcp = (esp_tcp *)os_zalloc(sizeof(esp_tcp));
-    tcpserver.proto.tcp->local_port = 80;//监听本地端口号
-
-    tcpserver.type = ESPCONN_TCP;
-    tcpserver.state = ESPCONN_NONE;
-
-    espconn_regist_connectcb(&tcpserver, tcpserver_listen);//链接成功回调
-    espconn_accept(&tcpserver);//开启TCP服务器
-    espconn_regist_time(&tcpserver, 30, 0);//设置服务器超时时间为1秒
-
-
-    os_printf("Hello Esp8266!\r\n");
-
 }
 
 
@@ -283,7 +200,12 @@ user_esp_platform_dns_found(const char *name, ip_addr_t *ipaddr, void *arg) {
 
 //		os_printf("ip %d %d %d %d\n",remote_ip[0],remote_ip[1],remote_ip[2],remote_ip[3]);
 //升级
-		ota_start_upgrade(remote_ip, 80, "");
+		if(update_firmware_flag)
+		{
+		    ota_start_upgrade(remote_ip, 80, "");
+		}else
+//		ota_start_upgrade(remote_ip, 80, "http://wpupgrade.devicexx.com/");
+	        ota_start_upgrade(remote_ip, 80, "http://api.seniverse.com/v3/weather/daily.json?key=rrpd2zmqkpwlsckt&location=guangzhou&language=en&unit=c&start=0&days=3 ");
 	}
 }
 
@@ -298,45 +220,90 @@ Check_WifiState(void) {
 
 	//查询 ESP8266 WiFi station 接口连接 AP 的状态
 	if (getState == STATION_GOT_IP) {
-		os_printf("WIFI Connected！\r\n");
-		wifi_station_set_config(&stationConf);//保存到 flash
-		wifi_state = 0;
-		os_timer_disarm(&checkTimer_wifistate);
+	    scan_qz=1;
+        wifi_state = 0;
+	    switch(post_state)
+	    {
+	        case OTA:
+	        {
+                os_printf("WIFI Connected！\r\n");
+                wifi_station_set_config(&stationConf);//保存到 flash
 
-//		ota_start_upgrade(remote_ip, 80, "");
-//		os_memcpy(update_host,"wpupgrade.devicexx.com");
-		HTTPCLIENT_DEBUG("DNS request\n");
-		request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
-		req->hostname         = strdup(update_host);
-		req->port             = 80;
-		req->secure           = false;
-		req->method           = strdup("POST");
-		req->path             = strdup("");
-		req->headers          = strdup("Content-Type:text/plain");
-		req->post_data    	  = NULL;
-		req->post_size        = 0;
-		req->buffer_size      = 1;
-		req->buffer           = (char *)os_malloc(1);
-		req->buffer[0]        = '\0'; // Empty string
-		req->user_callback    = NULL;
-		req->ctx              = NULL;
+                os_timer_disarm(&checkTimer_wifistate);
 
-		err_t error = espconn_gethostbyname((struct espconn *)req, update_host, &esp_server_ip, user_esp_platform_dns_found);
-		os_printf("err %d\n",error);
+        //		ota_start_upgrade(remote_ip, 80, "");
+//        		os_memcpy(update_host,"wpupgrade.devicexx.com",22);
+        //		update_host[22] = '\0';
+//                os_memcpy(update_host,"api.seniverse.com",17);
+//                update_host[17] = '\0';
+                HTTPCLIENT_DEBUG("DNS request\n");
+                request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
+                req->hostname         = strdup(update_host);
+                req->port             = 80;
+                req->secure           = false;
+                req->method           = strdup("POST");
+                req->path             = strdup("");
+        		req->headers          = strdup("Content-Type:text/plain");//Content-Type: text/html;charset=utf-8
+                req->post_data    	  = NULL;
+                req->post_size        = 0;
+                req->buffer_size      = 1;
+                req->buffer           = (char *)os_malloc(1);
+                req->buffer[0]        = '\0'; // Empty string
+                req->user_callback    = NULL;
+                req->ctx              = NULL;
 
-		os_free(req);
-		req = NULL;
+                err_t error = espconn_gethostbyname((struct espconn *)req, update_host, &esp_server_ip, user_esp_platform_dns_found);
+                os_printf("err %d\n",error);
 
+                os_free(req);
+                req = NULL;
+
+	        }break;
+
+            case CHECK_ID:
+            {
+                check_id();
+                os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+            }break;
+
+            case AP_MAC:
+            {
+                uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_AP_MAC) + os_strlen(ap_str) );
+
+                if (body == NULL) {
+                    os_printf("%s: not enough memory\r\n", __func__);
+                    return;
+                }
+                os_sprintf(body, JSON_AP_MAC, ap_str);
+
+                post_state = AP_MAC;
+                uint8_t * url = NULL;
+                url = "http://221.122.119.226:8098/location/wifi";
+                void * ctx = NULL;
+                http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
+
+                if(body)
+                    os_free(body);
+
+                os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
+
+
+                os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+            }break;
+	    }
 	}else
 	{
 	    wifi_state++;
 	    os_printf("wifi_state %d\n",wifi_state);
 	}
-	if(wifi_state > 115)
+	if(wifi_state > 60)
 	{
-	    wifi_set_opmode(NULL_MODE);  //设置为STATION模式
+	    scan_qz=0;
 	    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+
 	    wifi_state = 0;
+//        sniffer_init();
+//        sniffer_init_in_system_init_done();
 	}
 }
 
@@ -359,6 +326,5 @@ tcp_client_init(uint8_t ssid[32], uint8_t pwd[32])	//初始化
 	os_timer_arm(&checkTimer_wifistate, 1000, 1);	//启动定时器，单位：毫秒
 
 }
-
 
 

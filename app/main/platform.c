@@ -13,6 +13,7 @@
 #include "c_types.h"
 #include "user_config.h"
 #include "user_interface.h"
+#include "tcpclient.h"
 #include "platform.h"
 #include "uart.h"
 #include "i2c_oled.h"
@@ -30,7 +31,7 @@
 #include "sniffer.h"
 
 os_timer_t timer_1S;
-os_timer_t timer_3S;
+
 os_timer_t timer_4S;
 os_timer_t restart_nb;
 os_timer_t check_id_timer;
@@ -44,6 +45,9 @@ os_timer_t vankia_timer;
 os_timer_t delay_discon_timer;
 os_timer_t delay_update_timer;
 os_timer_t scan_timer;
+os_timer_t wait_nb_con_timer;
+
+uint8_t ap_black_list[256];
 struct scan_config config = { NULL, NULL, 0, 0, 0, 100};
 uint8_t *  ap_str = "000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;000000000000,00,2400;";
 struct scan_inf {
@@ -101,15 +105,41 @@ delay_power_on()
 //    os_timer_arm(&vankia_timer, 3000, 0);
 //}
 
+
+
+void ICACHE_FLASH_ATTR
+switch_to_wifi()
+{
+    uint8_t *ssid="qingzhu";
+    uint8_t *pwd = "12345678";
+    os_strcpy(stationConf.ssid, ssid);
+    os_strcpy(stationConf.password, pwd);
+    os_printf(" ssid %s\n password %s\n",stationConf.ssid,stationConf.password);
+//    wifi_station_set_config_current(&stationConf);  //设置WiFi station接口配置，不保存到 flash
+//    注意不能使用上一句，我出现连接不上路由器情况
+
+    wifi_station_set_config(&stationConf);  //设置WiFi station接口配置，并保存到 flash
+//    wifi_set_opmode(STATION_MODE);  //设置为STATION模式
+    wifi_station_connect(); //连接路由器
+
+    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+    os_timer_setfn(&checkTimer_wifistate, (os_timer_func_t *) Check_WifiState, NULL);   //设置定时器回调函数
+    os_timer_arm(&checkTimer_wifistate, 1000, 1);   //启动定时器，单位：毫秒
+
+}
+
+
 static void ICACHE_FLASH_ATTR
 scan_done(void *arg, STATUS status)
 {
 
+    os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
+
     uint8_t i=0,j=0,sum=0;
     uint8_t temp_pond[8],temp_rssi=99;
     uint8_t temp_apstr[114];
-//    char temp[128];
-//    uint8 tem_ssid[33];
+    char temp[128];
+    uint8 tem_ssid[33];
     if (status == OK)
     {
         j=0;
@@ -122,8 +152,21 @@ scan_done(void *arg, STATUS status)
             for(i=0;i<6;i++)
                 scan_inf.ap_mac_pond[j][i] = bss_link->bssid[i];
 
+            if(os_strstr(bss_link->ssid,"qingzhu"))
+            {
+                os_printf("%s find\n",bss_link->ssid);
+                scan_qz = 1;
+                if(STATION_GOT_IP != wifi_station_get_connect_status()){
+                    switch_to_wifi();
+
+                    os_timer_disarm(&restart_nb);
+                }
+            }
+
             bss_link = bss_link->next.stqe_next;
             j++;
+
+
 //            os_memset(tem_ssid, 0, 33);
 //            if (os_strlen(bss_link->ssid) <= 32)
 //            {
@@ -315,18 +358,57 @@ scan_done(void *arg, STATUS status)
         os_memcpy( ap_str+18+i*21, temp_apstr+16+i*18, 2);
     }
 
-
     os_printf( "mac string %s\n", ap_str );
-
-
     ap_str_ascii_str(ap_str);
 
 }
+
+
+
+
+
+void ICACHE_FLASH_ATTR
+get_device_id()
+{
+    uint8_t src[6], i, mac_address_str[12];
+    if (wifi_get_macaddr(STATION_IF, src))//获取mac地址
+    {
+        for(i=0; i< 12; i++)
+        {
+            mac_address_str[i]   = (src[i/2] >> 4) & 0xf;
+            mac_address_str[i+1] =  src[i/2] & 0xf;
+            i++;
+        }
+
+        for(i=0; i< 12; i++){
+            if( mac_address_str[i] < 10)
+                mac_address_str[i] += 48;
+            else
+                mac_address_str[i] += 55;
+        }
+        os_memcpy(parameter_deviceId + 10, mac_address_str, 12);
+
+        os_printf("deviceid %s\n",parameter_deviceId);
+        strhex_to_str(parameter_deviceId,1);
+
+
+    }else system_restart();
+}
+
 
 void ICACHE_FLASH_ATTR
 wifi_scan()
 {
     wifi_station_scan(&config, scan_done);
+}
+
+void ICACHE_FLASH_ATTR
+erase_sector(void)
+{
+    uint16 i;
+    if(0)
+        for(i=0;i<505;i++)
+            spi_flash_erase_sector(i+513);
 }
 
 void ICACHE_FLASH_ATTR
@@ -337,8 +419,11 @@ platform_init(void)
 	gpio16_output_conf();
 	gpio16_output_set(1);
 
-	devicexx_io_init();
+	erase_sector();
 
+	devicexx_io_init();
+	get_device_id();
+	update_timestamp();
 
 #ifdef OLED_VERSION
     i2c_master_gpio_init();
@@ -366,21 +451,16 @@ platform_init(void)
     os_timer_disarm(&check_id_timer);
     os_timer_setfn(&check_id_timer, (os_timer_func_t *)check_id, NULL);
 
-//    os_timer_disarm(&timer_300s);
-//    os_timer_setfn(&timer_300s, (os_timer_func_t *)check_gps, NULL);
+
 
     os_timer_disarm(&restart_nb);//20S没有收到数据，重新上电
     os_timer_setfn(&restart_nb, (os_timer_func_t *)delay_power_on, NULL);
 
 
-    os_timer_disarm(&timer_3S);
-    os_timer_setfn(&timer_3S, (os_timer_func_t *)delay_power_on, NULL);
-//    os_timer_arm(&timer_3S, 3000, 0);//开机
-//    os_printf("wait... 3s\n");
-    gnrmc_gps_flag = 0;
-//    send_flag = 0;
 
-    wifi_set_opmode(STATION_MODE);
+    gnrmc_gps_flag = 0;
+
+//    wifi_set_opmode(STATION_MODE);
 
     os_timer_disarm(&scan_timer);
     os_timer_setfn(&scan_timer, (os_timer_func_t *)wifi_scan, NULL);
@@ -391,17 +471,28 @@ platform_init(void)
     os_timer_disarm(&delay_discon_timer);
     os_timer_setfn(&delay_discon_timer, (os_timer_func_t *)http_disc, NULL);
 //    {//test
-//        uint16_t i;
-//        char * fid_addr = NULL;
-//        uint8_t http_get_tag1 [] = "AT+EHTTPSEND=0,312,312,\"0,1,21,\"/MacGather/getCollect\",0,,16,\"application/json\",233,7b226465766963654964223a2251696e677a68752d5651303030303030303030303030222c2276657273696f6e223a22302e303030222c22776569223a22303030302e3030303030222c226c6e67223a2230303030302e3030303030222c2274696d65223a22303030303030303030303030227d,\"\r\n";
-//            //03 46 39 11 01 19
-//    	for(i=0;i<os_strlen(http_get_tag1);i++)
-//    	{
-//    		os_printf("http_get_tag1[%3d]=%c\n",i ,http_get_tag1[i]);
-//    	}
+//    uint8 * uart_receive_at = "+CESQ: 99,6,255,255,12,45";
+//
+//    if(os_strstr(uart_receive_at,"+CESQ"))
+//    {
+//
+//        uint8_t * addr1 = NULL;
+//        uint8_t * addr2 = NULL;
+//
+//        addr1 = strstr(uart_receive_at,":");
+//        addr2 = strstr(uart_receive_at,",");
+//
+//        os_printf("len=%c\n",*(addr2-2));
+//    }
 //    }
 //    sniffer_init();
 //    sniffer_init_in_system_init_done();
+//    wifi_scan();
+    post_state = CHECK_ID;
+    os_timer_disarm(&wait_nb_con_timer);
+    os_timer_setfn(&wait_nb_con_timer, (os_timer_func_t *)switch_to_wifi, NULL);
+    os_timer_arm(&wait_nb_con_timer, 60000, 0);
+
     get_gps = 0;
 
 }
