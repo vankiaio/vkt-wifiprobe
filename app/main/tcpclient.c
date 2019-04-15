@@ -73,7 +73,7 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
 
 
                 cJSON * json_desc = cJSON_GetObjectItem(json_root, "desc");
-
+                cJSON * json_error = cJSON_GetObjectItem(json_root, "error");
 
                 cJSON * json_lon = cJSON_GetObjectItem(json_root, "lon");
                 cJSON * json_lat = cJSON_GetObjectItem(json_root, "lat");
@@ -162,6 +162,10 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
                         check_id();
                     }
 
+                }else
+                {
+                    post_state = CHECK_ID;
+                    check_id();
                 }
 
 
@@ -220,6 +224,7 @@ Check_WifiState(void) {
 
 	//查询 ESP8266 WiFi station 接口连接 AP 的状态
 	if (getState == STATION_GOT_IP) {
+        os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 	    scan_qz=1;
         wifi_state = 0;
 	    switch(post_state)
@@ -228,8 +233,6 @@ Check_WifiState(void) {
 	        {
                 os_printf("WIFI Connected！\r\n");
                 wifi_station_set_config(&stationConf);//保存到 flash
-
-                os_timer_disarm(&checkTimer_wifistate);
 
         //		ota_start_upgrade(remote_ip, 80, "");
 //        		os_memcpy(update_host,"wpupgrade.devicexx.com",22);
@@ -263,11 +266,13 @@ Check_WifiState(void) {
             case CHECK_ID:
             {
                 check_id();
-                os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+
             }break;
 
             case AP_MAC:
             {
+                os_timer_disarm(&timer_wait_con_wifi);
+
                 uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_AP_MAC) + os_strlen(ap_str) );
 
                 if (body == NULL) {
@@ -278,7 +283,7 @@ Check_WifiState(void) {
 
                 post_state = AP_MAC;
                 uint8_t * url = NULL;
-                url = "http://221.122.119.226:8098/location/wifi";
+                url = "http://47.105.207.228:8098/location/wifi";
                 void * ctx = NULL;
                 http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
 
@@ -288,11 +293,12 @@ Check_WifiState(void) {
                 os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
 
 
-                os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+
             }break;
 	    }
 	}else
 	{
+	    scan_qz=0;
 	    wifi_state++;
 	    os_printf("wifi_state %d\n",wifi_state);
 	}

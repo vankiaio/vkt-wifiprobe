@@ -69,9 +69,9 @@ uint8_t get_cesq[] = "AT+CESQ\r\n";
 //uint8_t rx_fifo[2048];
 
 
-uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
+//uint8_t http_create[] = "AT+EHTTPCREATE=0,41,41,\"\"http://221.122.119.226:8098/\",,,0,,0,,0,\"\r\n";
 
-//uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://47.105.207.228:8098/\",,,0,,0,,0,\"\r\n";
+uint8_t http_create[] = "AT+EHTTPCREATE=0,40,40,\"\"http://47.105.207.228:8098/\",,,0,,0,,0,\"\r\n";
 
 //uint8_t edns[] = "AT+EDNS=\"wpupgrade.devicexx.com\"\r\n";//
 //uint8_t edns[] = "AT+EDNS=\"bc.qzbdata.com\"\r\n";//  清竹大数据 域名
@@ -170,6 +170,7 @@ ota_finished_callback(void *arg)
             delay_power_on();
             os_printf("OTA  Success ! rebooting!\n");
             local_system_status.version_num = version_num;
+
         	devicexx_app_save();
 
 
@@ -651,12 +652,11 @@ create_http(uint8_t times)
     os_printf("send_order %d\n",send_order);
     os_printf("http_dis %d\n",http_dis);
 
-    if(send_order == 0)
+    if(send_order == 0 ||  creat_flag == 0)
     {
         os_memset(uart_receive_at,'\0',sizeof(char)*2048);
         queue_uart_send(http_create,os_strlen(http_create));
         os_printf("send http_create %s\n",http_create);
-        creat_flag = 1;
     }else
     {
         if(http_dis == 1)
@@ -679,13 +679,13 @@ ap_str_ascii_str(char * ap_str)
 {
     os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
     os_printf("scan_qz:%d\n",scan_qz);
+
     if (wifi_station_get_connect_status() == STATION_GOT_IP) {
         scan_qz=1;
-    }else scan_qz=0;
-
-    if(scan_qz == 0)
+    }else
     {
-        post_state = AP_MAC;
+        scan_qz=0;
+
         uint16_t len = os_strlen(ap_str);
         os_printf("len=%d\n",len);
         uint8_t str[len*2];
@@ -904,7 +904,7 @@ update_data()//上传mac数据
         }
         post_state = UPMAC;
         uint8_t * url = NULL;
-        url = "http://221.122.119.226:8098/MacGather/submitValue";
+        url = "http://47.105.207.228:8098/MacGather/submitValue";
         void * ctx = NULL;
         http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
         if (body)
@@ -1012,7 +1012,7 @@ check_id(void)
         os_printf("body:%s\n",body);
 
         uint8_t * url = NULL;
-        url = "http://221.122.119.226:8098/MacGather/getCollect";
+        url = "http://47.105.207.228:8098/MacGather/getCollect";
         void * ctx = NULL;
         http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
 
@@ -1711,18 +1711,19 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//设备未使用：数据库没有这个设备；未绑定：数据库有设备但是为关联代理商
             {
 //                bind_flag = 0;
-                at_state = WAIT;
-
+//                at_state = WAIT;
+                os_timer_disarm(&check_id_timer);
+                os_timer_arm(&check_id_timer, 120000, 1);
 #ifdef OLED_VERSION
 #else
-                led_state = 3;
-                devicexx_io_led_timer_tick();
+//                led_state = 3;
+//                devicexx_io_led_timer_tick();
 #endif
 //                wifi_set_opmode(SOFTAP_MODE);
 //                vowstar_set_ssid_prefix("Qingzhu_VQ_");
 //                tcp_server();
 
-                os_timer_disarm(&restart_nb);
+//                os_timer_disarm(&restart_nb);
 
             }
             else
@@ -1876,6 +1877,7 @@ devicexx_app_load(void)
 		local_system_status.version_num = 0;
 		devicexx_app_save();
 	}
+
 	os_printf("version_type %d  version_num %d\n",local_system_status.version_type,local_system_status.version_num);
 }
 

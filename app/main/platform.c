@@ -37,6 +37,8 @@ os_timer_t restart_nb;
 os_timer_t check_id_timer;
 os_timer_t timer_300s;
 
+os_timer_t timer_wait_con_wifi;
+
 
 os_timer_t F6x8_timer;
 os_timer_t qingzhu_timer;
@@ -128,13 +130,18 @@ switch_to_wifi()
 
 }
 
+void ICACHE_FLASH_ATTR
+wait_con_wifi(void)
+{
+    ap_str_ascii_str(ap_str);
+}
 
 static void ICACHE_FLASH_ATTR
 scan_done(void *arg, STATUS status)
 {
 
     os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
-
+    post_state = AP_MAC;
     uint8_t i=0,j=0,sum=0;
     uint8_t temp_pond[8],temp_rssi=99;
     uint8_t temp_apstr[114];
@@ -156,11 +163,7 @@ scan_done(void *arg, STATUS status)
             {
                 os_printf("%s find\n",bss_link->ssid);
                 scan_qz = 1;
-                if(STATION_GOT_IP != wifi_station_get_connect_status()){
-                    switch_to_wifi();
 
-                    os_timer_disarm(&restart_nb);
-                }
             }
 
             bss_link = bss_link->next.stqe_next;
@@ -359,8 +362,16 @@ scan_done(void *arg, STATUS status)
     }
 
     os_printf( "mac string %s\n", ap_str );
-    ap_str_ascii_str(ap_str);
+    if(scan_qz == 1)
+    {
+        if(STATION_GOT_IP != wifi_station_get_connect_status()){
+            switch_to_wifi();
 
+            os_timer_disarm(&restart_nb);
+        }
+    }
+
+    os_timer_arm(&timer_wait_con_wifi, 15000, 0);
 }
 
 
@@ -461,6 +472,10 @@ platform_init(void)
     gnrmc_gps_flag = 0;
 
 //    wifi_set_opmode(STATION_MODE);
+
+
+    os_timer_disarm(&timer_wait_con_wifi);
+    os_timer_setfn(&timer_wait_con_wifi, (os_timer_func_t *)wait_con_wifi, NULL);
 
     os_timer_disarm(&scan_timer);
     os_timer_setfn(&scan_timer, (os_timer_func_t *)wifi_scan, NULL);

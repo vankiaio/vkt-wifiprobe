@@ -23,6 +23,8 @@ extern os_timer_t delay_update_timer;
 extern os_timer_t delay_discon_timer;
 extern os_timer_t wait_nb_con_timer;
 
+extern os_timer_t timer_wait_con_wifi;
+
 //#define OLED
 
 
