@@ -34,6 +34,7 @@ os_timer_t timer_1S;
 
 os_timer_t timer_4S;
 os_timer_t restart_nb;
+os_timer_t err_restart;
 os_timer_t check_id_timer;
 os_timer_t timer_300s;
 
@@ -112,8 +113,9 @@ delay_power_on()
 void ICACHE_FLASH_ATTR
 switch_to_wifi()
 {
-    uint8_t *ssid="qingzhu";
-    uint8_t *pwd = "12345678";
+    uint8 ssid[]={"qingzhu"};
+    uint8 pwd[]={"12345678"};
+
     os_strcpy(stationConf.ssid, ssid);
     os_strcpy(stationConf.password, pwd);
     os_printf(" ssid %s\n password %s\n",stationConf.ssid,stationConf.password);
@@ -141,7 +143,7 @@ scan_done(void *arg, STATUS status)
 {
 
     os_printf("wifi status %d\r\n",wifi_station_get_connect_status());
-    post_state = AP_MAC;
+
     uint8_t i=0,j=0,sum=0;
     uint8_t temp_pond[8],temp_rssi=99;
     uint8_t temp_apstr[114];
@@ -169,21 +171,6 @@ scan_done(void *arg, STATUS status)
             bss_link = bss_link->next.stqe_next;
             j++;
 
-
-//            os_memset(tem_ssid, 0, 33);
-//            if (os_strlen(bss_link->ssid) <= 32)
-//            {
-//              os_memcpy(tem_ssid, bss_link->ssid, os_strlen(bss_link->ssid));
-//            }
-//            else
-//            {
-//              os_memcpy(tem_ssid, bss_link->ssid, 32);
-//            }
-//
-//            os_sprintf(temp,"+CWLAP:(%d,\"%s\",%d,\""MACSTR"\",%d)\r\n",
-//                       bss_link->authmode, tem_ssid, bss_link->rssi,
-//                       MAC2STR(bss_link->bssid),bss_link->channel);
-//            os_printf("%s",temp);
         }
         sum = j;
 
@@ -198,45 +185,45 @@ scan_done(void *arg, STATUS status)
 //        }
     }
 
-    for(i=0;i<sum-1;++i)//n个数,总共需要进行n-1次
-    {                 //n-1个数排完,第一个数一定已经归位
-        //每次会将最大(升序)或最小(降序)放到最后面
-
-        for(j=0;j<sum-i-1;++j)
-        {
-            if(scan_inf.rssi[j]>scan_inf.rssi[j+1])
-            {
-                temp_rssi=scan_inf.rssi[j];
-                temp_pond[0] = scan_inf.ap_mac_pond[j][0];
-                temp_pond[1] = scan_inf.ap_mac_pond[j][1];
-                temp_pond[2] = scan_inf.ap_mac_pond[j][2];
-                temp_pond[3] = scan_inf.ap_mac_pond[j][3];
-                temp_pond[4] = scan_inf.ap_mac_pond[j][4];
-                temp_pond[5] = scan_inf.ap_mac_pond[j][5];
-                temp_pond[7] = scan_inf.channel[j];
-
-                scan_inf.rssi[j]=scan_inf.rssi[j+1];
-                scan_inf.ap_mac_pond[j][0] = scan_inf.ap_mac_pond[j+1][0];
-                scan_inf.ap_mac_pond[j][1] = scan_inf.ap_mac_pond[j+1][1];
-                scan_inf.ap_mac_pond[j][2] = scan_inf.ap_mac_pond[j+1][2];
-                scan_inf.ap_mac_pond[j][3] = scan_inf.ap_mac_pond[j+1][3];
-                scan_inf.ap_mac_pond[j][4] = scan_inf.ap_mac_pond[j+1][4];
-                scan_inf.ap_mac_pond[j][5] = scan_inf.ap_mac_pond[j+1][5];
-                scan_inf.channel[j] = scan_inf.channel[j+1];
-
-
-                scan_inf.rssi[j+1]=temp_rssi;
-                scan_inf.ap_mac_pond[j+1][0] = temp_pond[0];
-                scan_inf.ap_mac_pond[j+1][1] = temp_pond[1];
-                scan_inf.ap_mac_pond[j+1][2] = temp_pond[2];
-                scan_inf.ap_mac_pond[j+1][3] = temp_pond[3];
-                scan_inf.ap_mac_pond[j+1][4] = temp_pond[4];
-                scan_inf.ap_mac_pond[j+1][5] = temp_pond[5];
-                scan_inf.channel[j+1] = temp_pond[7];
-
-            }
-        }
-    }
+//    for(i=0;i<sum-1;++i)//n个数,总共需要进行n-1次
+//    {                 //n-1个数排完,第一个数一定已经归位
+//        //每次会将最大(升序)或最小(降序)放到最后面
+//
+//        for(j=0;j<sum-i-1;++j)
+//        {
+//            if(scan_inf.rssi[j]>scan_inf.rssi[j+1])
+//            {
+//                temp_rssi=scan_inf.rssi[j];
+//                temp_pond[0] = scan_inf.ap_mac_pond[j][0];
+//                temp_pond[1] = scan_inf.ap_mac_pond[j][1];
+//                temp_pond[2] = scan_inf.ap_mac_pond[j][2];
+//                temp_pond[3] = scan_inf.ap_mac_pond[j][3];
+//                temp_pond[4] = scan_inf.ap_mac_pond[j][4];
+//                temp_pond[5] = scan_inf.ap_mac_pond[j][5];
+//                temp_pond[7] = scan_inf.channel[j];
+//
+//                scan_inf.rssi[j]=scan_inf.rssi[j+1];
+//                scan_inf.ap_mac_pond[j][0] = scan_inf.ap_mac_pond[j+1][0];
+//                scan_inf.ap_mac_pond[j][1] = scan_inf.ap_mac_pond[j+1][1];
+//                scan_inf.ap_mac_pond[j][2] = scan_inf.ap_mac_pond[j+1][2];
+//                scan_inf.ap_mac_pond[j][3] = scan_inf.ap_mac_pond[j+1][3];
+//                scan_inf.ap_mac_pond[j][4] = scan_inf.ap_mac_pond[j+1][4];
+//                scan_inf.ap_mac_pond[j][5] = scan_inf.ap_mac_pond[j+1][5];
+//                scan_inf.channel[j] = scan_inf.channel[j+1];
+//
+//
+//                scan_inf.rssi[j+1]=temp_rssi;
+//                scan_inf.ap_mac_pond[j+1][0] = temp_pond[0];
+//                scan_inf.ap_mac_pond[j+1][1] = temp_pond[1];
+//                scan_inf.ap_mac_pond[j+1][2] = temp_pond[2];
+//                scan_inf.ap_mac_pond[j+1][3] = temp_pond[3];
+//                scan_inf.ap_mac_pond[j+1][4] = temp_pond[4];
+//                scan_inf.ap_mac_pond[j+1][5] = temp_pond[5];
+//                scan_inf.channel[j+1] = temp_pond[7];
+//
+//            }
+//        }
+//    }
 
 //    for(i=0;i<sum;i++)
 //    {
@@ -361,17 +348,23 @@ scan_done(void *arg, STATUS status)
         os_memcpy( ap_str+18+i*21, temp_apstr+16+i*18, 2);
     }
 
-    os_printf( "mac string %s\n", ap_str );
+    os_printf( "ap_mac string %s\n", ap_str );
     if(scan_qz == 1)
     {
-        if(STATION_GOT_IP != wifi_station_get_connect_status()){
+//        if(STATION_GOT_IP != wifi_station_get_connect_status())
+        {
             switch_to_wifi();
-
+            scan_qz=0;
             os_timer_disarm(&restart_nb);
         }
     }
 
-    os_timer_arm(&timer_wait_con_wifi, 15000, 0);
+    if(get_gps == 0)
+    {
+        os_timer_disarm(&timer_wait_con_wifi);
+        os_timer_arm(&timer_wait_con_wifi, 10000, 0);
+        post_state = AP_MAC;
+    }
 }
 
 
@@ -413,14 +406,6 @@ wifi_scan()
     wifi_station_scan(&config, scan_done);
 }
 
-void ICACHE_FLASH_ATTR
-erase_sector(void)
-{
-    uint16 i;
-    if(0)
-        for(i=0;i<505;i++)
-            spi_flash_erase_sector(i+513);
-}
 
 void ICACHE_FLASH_ATTR
 platform_init(void)
@@ -429,12 +414,9 @@ platform_init(void)
 	devicexx_app_apply_settings();
 	gpio16_output_conf();
 	gpio16_output_set(1);
-
-	erase_sector();
-
 	devicexx_io_init();
 	get_device_id();
-	update_timestamp();
+
 
 #ifdef OLED_VERSION
     i2c_master_gpio_init();
@@ -465,10 +447,11 @@ platform_init(void)
 
 
     os_timer_disarm(&restart_nb);//20S没有收到数据，重新上电
-    os_timer_setfn(&restart_nb, (os_timer_func_t *)delay_power_on, NULL);
+    os_timer_setfn(&restart_nb, (os_timer_func_t *)delay_power_off, NULL);
 
 
-
+    os_timer_disarm(&err_restart);
+    os_timer_setfn(&err_restart, (os_timer_func_t *)delay_power_off, NULL);
     gnrmc_gps_flag = 0;
 
 //    wifi_set_opmode(STATION_MODE);
@@ -485,29 +468,40 @@ platform_init(void)
 
     os_timer_disarm(&delay_discon_timer);
     os_timer_setfn(&delay_discon_timer, (os_timer_func_t *)http_disc, NULL);
-//    {//test
-//    uint8 * uart_receive_at = "+CESQ: 99,6,255,255,12,45";
+
+    {//test
+
+//        uint8 * uart_receive_at = "+CESQ: 0,0,255,255,14,16";
+//        if(os_strstr(uart_receive_at,"+CESQ"))
+//        {
 //
-//    if(os_strstr(uart_receive_at,"+CESQ"))
-//    {
+//            uint8_t * addr1 = NULL;
+//            uint8_t * addr2 = NULL;
 //
-//        uint8_t * addr1 = NULL;
-//        uint8_t * addr2 = NULL;
-//
-//        addr1 = strstr(uart_receive_at,":");
-//        addr2 = strstr(uart_receive_at,",");
-//
-//        os_printf("len=%c\n",*(addr2-2));
-//    }
-//    }
-//    sniffer_init();
-//    sniffer_init_in_system_init_done();
-//    wifi_scan();
+//            addr1 = strstr(uart_receive_at,":");
+//            addr2 = strstr(uart_receive_at,",");
+//            os_printf("addr1:%c\naddr2:%c\naddr2-addr2:%d\n",addr1[0],addr2[0],addr2-addr1);
+//            if(addr2-addr1 == 3 || (*(addr2-2))==0x39)
+//            {
+//                os_printf("nb_signal_bad\r\n");
+//            }
+//            else
+//            {
+//                os_printf("nb_signal_ok\r\n");
+//            }
+//            os_printf("len=%c\n",*(addr2-2));
+//        }
+
+
+    }
+
     post_state = CHECK_ID;
     os_timer_disarm(&wait_nb_con_timer);
-    os_timer_setfn(&wait_nb_con_timer, (os_timer_func_t *)switch_to_wifi, NULL);
-    os_timer_arm(&wait_nb_con_timer, 60000, 0);
+//    os_timer_setfn(&wait_nb_con_timer, (os_timer_func_t *)switch_to_wifi, NULL);get_rssi
+    os_timer_setfn(&wait_nb_con_timer, (os_timer_func_t *)get_rssi, NULL);
+    os_timer_arm(&wait_nb_con_timer, 90000, 0);
 
     get_gps = 0;
+    os_memset(sta_str,'\0',sizeof(uint8)*1300);
 
 }

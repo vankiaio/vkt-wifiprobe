@@ -12,6 +12,7 @@
 
 #include "devicexx.h"
 
+#define test_environment
 
 #define JSON_DEVICE_MAC "{\"deviceId\":\"%s\",\"timestamp\":\"%s\",\"collectId\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\",\"mac_str\":\"%s\"}"
 
@@ -76,7 +77,15 @@ extern struct espconn pespconn;
 extern uint8_t gnrmc_gps_flag;
 extern uint8_t update_firmware_flag;
 extern uint8_t nb_signal_bad;
+extern uint8_t connected_wifi;
 extern uint8_t scan_qz;
+extern uint8_t wifi_net;
+extern uint8  sector_str[4096];
+extern uint16 sector_str_upload_flag_bit;
+
+extern uint8 all_sector_upload_done;
+extern uint16  sector_flag_bit;
+extern uint8 mac_inrom_flag;
 
 extern uint8_t version_type;
 extern uint16_t version_num;
@@ -93,7 +102,7 @@ extern uint8_t parameter_latitude[] ;
 
 
 
-extern uint8 st1,st2;
+
 //extern uint8_t send_flag;
 //extern uint8_t bind_flag;
 extern uint8_t loginName[];
@@ -115,14 +124,22 @@ void http_disc(void);
 void check_gps(void);
 void nbiot_http_post(void);
 void update_data(void);
-void update_timestamp(void);
-// Save user data to last 15, 14, 13 sector of flash
-#define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
+void Deduplication(void);
+void write_to_flash(void);
+void get_rssi(void);
+void delay_power_off();
 
+// Save user data to last 15, 14, 13 sector of flash
+//#define DEVICEXX_APP_START_SEC   	((flash_rom_get_size_byte() / 4096) - 15)
+#define DEVICEXX_APP_START_SEC 1011
 
 typedef struct system_status_t {
 	uint8_t version_type;
 	uint16_t version_num;
+	uint16_t used_sector;
+	uint8_t sector_updata_flag;
+	uint8 task_id[11];
+    uint8 times[12];
 } __attribute__((aligned(4), packed)) system_status_t;
 
 
@@ -139,7 +156,8 @@ typedef enum devicexx_app_state_t
 void devicexx_app_apply_settings(void);
 void devicexx_app_load(void);
 void devicexx_app_save(void);
-
+void app_save(uint8 flag);
+void save_stakid(uint8 * task_id);
 
 #endif /* __USER_DEVICEXX_VIRTUAL_MCU_H__ */
 

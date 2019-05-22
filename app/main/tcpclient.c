@@ -51,8 +51,6 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
     os_printf("%s: status:%d\n", __func__, http_status);
     if(http_status == -1)
     {
-        scan_qz=0;
-        wifi_station_disconnect();
         return;
     }
     if ((NULL != response_body) && (0 != response_body_size) && (NULL != response_headers)) {
@@ -105,36 +103,49 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
                     os_printf("json_version:%s\n",      json_version->valuestring);
                     os_printf("json_fixedId:%s\n",      json_fixedId->valuestring);
                     os_printf("json_isFixedTime:%s\n",  json_isFixedTime->valuestring);
-
+                    os_printf("\r\n\r\n\r\n\r\n\r\n\r\n");
                     uint8_t version_temp[5] ;//0.000
                     os_memcpy(version_temp,json_version->valuestring,5);
                     version_type=version_temp[0]-48;
                     version_num =(version_temp[2]-48)*100+(version_temp[3]-48)*10+version_temp[4]-48;
 
+                    os_printf("all_sector_upload_done：%d\n",all_sector_upload_done);
+                    os_printf("all_sector_upload_done：%d\n",all_sector_upload_done);
+                    os_printf("mac_inrom_flag：%d\n",mac_inrom_flag);
 
-                    if((0 != os_strcmp((json_collectId->valuestring),"00000000000")) &&
-                            (0 != os_strcmp((json_isCorrectTime->valuestring),"1")))
+                    save_stakid(json_collectId->valuestring);
+
+                    if((0 != os_strcmp(json_collectId->valuestring,"00000000000") && 0 == os_strcmp(json_isCorrectTime->valuestring,"0"))
+                                        || 0 == os_strcmp(json_isFixedTime->valuestring,"0"))
                     {
+                        if(all_sector_upload_done==1 && mac_inrom_flag==0)
+                        {
+                            os_memcpy(parameter_tag,json_collectId->valuestring,os_strlen(parameter_tag));
+                            queue_uart_send(zgmode,os_strlen(zgmode));
+                            os_printf("send %s\n",zgmode);
+                            at_state = ZGMODE;
 
-                        os_memcpy(parameter_tag,json_collectId->valuestring,os_strlen(parameter_tag));
-                        queue_uart_send(zgmode,os_strlen(zgmode));
-                        os_printf("send %s\n",zgmode);
-                        at_state = ZGMODE;
+						}
 
-                    }else if(0 == os_strcmp((json_isCorrectTime->valuestring),"1"))
+                    }else if(0 == os_strcmp(json_isCorrectTime->valuestring,"1"))
                     {
                         check_update_firmware(version_type,version_num,json_url->valuestring);
-                    }else
-                    {
-                        os_timer_disarm(&check_id_timer);
-                        os_timer_arm(&check_id_timer, 120000, 1);
                     }
 
-                    if((0 != os_strcmp((json_fixedId->valuestring),"00000000000")) &&
-                       (0 != os_strcmp((json_isFixedTime->valuestring),"1")))       //开通固定画像功能
+                    if(all_sector_upload_done==0 || mac_inrom_flag==1)
+                    {
+                        read_sector();
+
+                    }
+
+                    if(0 != os_strcmp(json_isFixedTime->valuestring,"1"))       //开通固定画像功能
                     {
                         isFixedTime[0]=48;
                         os_memcpy(fixedId,json_fixedId->valuestring,os_strlen(fixedId));
+                    }else
+                    {
+                        isFixedTime[0]=49;
+                        os_memcpy(fixedId,"GD000000000",os_strlen(fixedId));
                     }
 
 
@@ -155,11 +166,26 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
 
                 }else if(NULL != json_code && NULL != json_desc)
                 {
-                    if(0 == os_strcmp(json_desc->valuestring,"success") || 0 == os_strcmp(json_desc->valuestring,"false"))
+//                    if(0 == os_strcmp(json_desc->valuestring,"success"))
                     {
-                        os_timer_disarm(&delay_update_timer);
-                        post_state = CHECK_ID;
-                        check_id();
+                        mac_inrom_flag=0;
+                        sector_str[sector_str_upload_flag_bit]='0';
+                        if(all_sector_upload_done==0)
+                        {
+                            send_flash_mac();
+                        }else
+                        {
+//                            all_sector_upload_done=0;
+//                            app_save(0);
+                            os_timer_disarm(&delay_update_timer);
+                            post_state = CHECK_ID;
+                            check_id();
+                        }
+
+                    }
+//                    else if( 0 == os_strcmp(json_desc->valuestring,"false"))
+                    {
+					
                     }
 
                 }else
@@ -208,11 +234,40 @@ user_esp_platform_dns_found(const char *name, ip_addr_t *ipaddr, void *arg) {
 		{
 		    ota_start_upgrade(remote_ip, 80, "");
 		}else
+		{
 //		ota_start_upgrade(remote_ip, 80, "http://wpupgrade.devicexx.com/");
-	        ota_start_upgrade(remote_ip, 80, "http://api.seniverse.com/v3/weather/daily.json?key=rrpd2zmqkpwlsckt&location=guangzhou&language=en&unit=c&start=0&days=3 ");
+//	        ota_start_upgrade(remote_ip, 80, "http://api.seniverse.com/v3/weather/daily.json?key=rrpd2zmqkpwlsckt&location=guangzhou&language=en&unit=c&start=0&days=3 ");
+	}
 	}
 }
+void ICACHE_FLASH_ATTR
+get_host_byname(char *url)
+{
 
+    update_firmware_flag = 1;
+
+    HTTPCLIENT_DEBUG("DNS request\n");
+    request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
+    req->hostname         = strdup(url);
+    req->port             = 80;
+    req->secure           = false;
+    req->method           = strdup("POST");
+    req->path             = strdup("");
+    req->headers          = strdup("Content-Type:text/plain");//Content-Type: text/html;charset=utf-8
+    req->post_data        = NULL;
+    req->post_size        = 0;
+    req->buffer_size      = 1;
+    req->buffer           = (char *)os_malloc(1);
+    req->buffer[0]        = '\0'; // Empty string
+    req->user_callback    = NULL;
+    req->ctx              = NULL;
+
+    err_t error = espconn_gethostbyname((struct espconn *)req, url, &esp_server_ip, user_esp_platform_dns_found);
+    os_printf("err %d\n",error);
+
+    os_free(req);
+    req = NULL;
+}
 
 void ICACHE_FLASH_ATTR
 Check_WifiState(void) {
@@ -234,45 +289,18 @@ Check_WifiState(void) {
                 os_printf("WIFI Connected！\r\n");
                 wifi_station_set_config(&stationConf);//保存到 flash
 
-        //		ota_start_upgrade(remote_ip, 80, "");
-//        		os_memcpy(update_host,"wpupgrade.devicexx.com",22);
-        //		update_host[22] = '\0';
-//                os_memcpy(update_host,"api.seniverse.com",17);
-//                update_host[17] = '\0';
-                HTTPCLIENT_DEBUG("DNS request\n");
-                request_args_t * req  = (request_args_t *) os_malloc(sizeof(request_args_t));
-                req->hostname         = strdup(update_host);
-                req->port             = 80;
-                req->secure           = false;
-                req->method           = strdup("POST");
-                req->path             = strdup("");
-        		req->headers          = strdup("Content-Type:text/plain");//Content-Type: text/html;charset=utf-8
-                req->post_data    	  = NULL;
-                req->post_size        = 0;
-                req->buffer_size      = 1;
-                req->buffer           = (char *)os_malloc(1);
-                req->buffer[0]        = '\0'; // Empty string
-                req->user_callback    = NULL;
-                req->ctx              = NULL;
-
-                err_t error = espconn_gethostbyname((struct espconn *)req, update_host, &esp_server_ip, user_esp_platform_dns_found);
-                os_printf("err %d\n",error);
-
-                os_free(req);
-                req = NULL;
+                get_host_byname(update_host);
 
 	        }break;
 
             case CHECK_ID:
             {
                 check_id();
-
             }break;
 
             case AP_MAC:
             {
                 os_timer_disarm(&timer_wait_con_wifi);
-
                 uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_AP_MAC) + os_strlen(ap_str) );
 
                 if (body == NULL) {
@@ -283,10 +311,16 @@ Check_WifiState(void) {
 
                 post_state = AP_MAC;
                 uint8_t * url = NULL;
+
+#ifdef test_environment
+                url = "http://221.122.119.226:8098/location/wifi";
+#else
                 url = "http://47.105.207.228:8098/location/wifi";
+#endif
                 void * ctx = NULL;
                 http_post(ctx, url, "Content-Type:application/json\r\n", (const char *) body, os_strlen(body), post_callback);
-
+                url = NULL;
+                ctx = NULL;
                 if(body)
                     os_free(body);
 
@@ -302,20 +336,28 @@ Check_WifiState(void) {
 	    wifi_state++;
 	    os_printf("wifi_state %d\n",wifi_state);
 	}
-	if(wifi_state > 60)
+	if(wifi_state > 30)
 	{
 	    scan_qz=0;
 	    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 
 	    wifi_state = 0;
-//        sniffer_init();
-//        sniffer_init_in_system_init_done();
+	    mac_inrom_flag=0;
+        all_sector_upload_done=0;
+	    write_to_flash();
+	    app_save(0);
+
+        queue_uart_send(zgmode,os_strlen(zgmode));
+        os_printf("send %s\n",zgmode);
+        at_state = ZGMODE;
+
 	}
 }
 
 void ICACHE_FLASH_ATTR
 tcp_client_init(uint8_t ssid[32], uint8_t pwd[32])	//初始化
 {
+    update_firmware_flag= 1;
 	os_strcpy(stationConf.ssid, ssid);	  //改成你自己的   路由器的用户名
 	os_strcpy(stationConf.password, pwd); //改成你自己的   路由器的密码
     os_printf(" ssid %s\n password %s\n",stationConf.ssid,stationConf.password);
