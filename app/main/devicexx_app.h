@@ -12,7 +12,7 @@
 
 #include "devicexx.h"
 
-#define test_environment
+//#define test_environment
 
 #define JSON_DEVICE_MAC "{\"deviceId\":\"%s\",\"timestamp\":\"%s\",\"collectId\":\"%s\",\"longitude\":\"%s\",\"latitude\":\"%s\",\"mac_str\":\"%s\"}"
 
@@ -114,7 +114,7 @@ extern uint8_t apmac_rssi[6][8];
 
 
 extern uint8_t read_adc[];
-
+extern uint8_t uart_receive_at[];
 
 void ap_str_ascii_str(char * body);
 void power_on(void);

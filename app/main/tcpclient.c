@@ -51,10 +51,13 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
     os_printf("%s: status:%d\n", __func__, http_status);
     if(http_status == -1)
     {
+
         return;
     }
     if ((NULL != response_body) && (0 != response_body_size) && (NULL != response_headers)) {
         if (200 == http_status) {
+
+            connected_wifi=1;
             // Process and try encrypt data
             for(i=0;i<response_body_size-1;i++)
             {
@@ -134,6 +137,7 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
 
                     if(all_sector_upload_done==0 || mac_inrom_flag==1)
                     {
+
                         read_sector();
 
                     }
@@ -166,7 +170,21 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
 
                 }else if(NULL != json_code && NULL != json_desc)
                 {
-//                    if(0 == os_strcmp(json_desc->valuestring,"success"))
+                    os_printf("json_code:%s\n",         json_code->valuestring);
+                    os_printf("json_code:%s\n",         json_desc->valuestring);
+
+
+                    if(json_desc->valuestring[6]==0xe6 && json_desc->valuestring[7]==0x9c && json_desc->valuestring[8]==0xaa
+                            && json_desc->valuestring[9]==0xe7  && json_desc->valuestring[10]==0xbb && json_desc->valuestring[11]==0x91 )
+                    {
+                        uint8_t version_temp[5] ;//0.000
+                        os_memcpy(version_temp,json_version->valuestring,5);
+                        version_num =(version_temp[2]-48)*100+(version_temp[3]-48)*10+version_temp[4]-48;
+                        version_type=0;
+                        os_printf("version_num:%d\n",version_num);
+                        check_update_firmware(version_type,version_num,json_url->valuestring);
+
+                    }else
                     {
                         mac_inrom_flag=0;
                         sector_str[sector_str_upload_flag_bit]='0';
@@ -183,10 +201,7 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
                         }
 
                     }
-//                    else if( 0 == os_strcmp(json_desc->valuestring,"false"))
-                    {
-					
-                    }
+
 
                 }else
                 {
@@ -279,8 +294,10 @@ Check_WifiState(void) {
 
 	//查询 ESP8266 WiFi station 接口连接 AP 的状态
 	if (getState == STATION_GOT_IP) {
+        os_timer_disarm(&check_id_timer);
         os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 	    scan_qz=1;
+        connected_wifi=1;
         wifi_state = 0;
 	    switch(post_state)
 	    {
@@ -336,20 +353,24 @@ Check_WifiState(void) {
 	    wifi_state++;
 	    os_printf("wifi_state %d\n",wifi_state);
 	}
-	if(wifi_state > 30)
+	if(wifi_state > 18)
 	{
-	    scan_qz=0;
-	    os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
+	    if(nb_signal_bad==1)
+	    {
+	        scan_qz=0;
+	        os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 
-	    wifi_state = 0;
-	    mac_inrom_flag=0;
-        all_sector_upload_done=0;
-	    write_to_flash();
-	    app_save(0);
+	        wifi_state = 0;
+	        mac_inrom_flag=0;
+	        all_sector_upload_done=0;
+	        write_to_flash();
+	        app_save(0);
 
-        queue_uart_send(zgmode,os_strlen(zgmode));
-        os_printf("send %s\n",zgmode);
-        at_state = ZGMODE;
+	        queue_uart_send(zgmode,os_strlen(zgmode));
+	        os_printf("send %s\n",zgmode);
+	        at_state = ZGMODE;
+	        connected_wifi=0;
+	    }
 
 	}
 }

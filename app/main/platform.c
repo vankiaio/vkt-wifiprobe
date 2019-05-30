@@ -362,7 +362,7 @@ scan_done(void *arg, STATUS status)
     if(get_gps == 0)
     {
         os_timer_disarm(&timer_wait_con_wifi);
-        os_timer_arm(&timer_wait_con_wifi, 10000, 0);
+        os_timer_arm(&timer_wait_con_wifi, 18000, 0);
         post_state = AP_MAC;
     }
 }
@@ -499,9 +499,17 @@ platform_init(void)
     os_timer_disarm(&wait_nb_con_timer);
 //    os_timer_setfn(&wait_nb_con_timer, (os_timer_func_t *)switch_to_wifi, NULL);get_rssi
     os_timer_setfn(&wait_nb_con_timer, (os_timer_func_t *)get_rssi, NULL);
-    os_timer_arm(&wait_nb_con_timer, 90000, 0);
+    os_timer_arm(&wait_nb_con_timer, 30000, 0);
 
     get_gps = 0;
     os_memset(sta_str,'\0',sizeof(uint8)*1300);
 
+
+
+    uint8 ssid[]={"qingzhu"};
+    uint8 pwd[]={"12345678"};
+    os_strcpy(stationConf.ssid, ssid);
+    os_strcpy(stationConf.password, pwd);
+    wifi_station_set_config(&stationConf);  //设置WiFi station接口配置，并保存到 flash
+    wifi_station_connect(); //连接路由器
 }

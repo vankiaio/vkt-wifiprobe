@@ -660,10 +660,11 @@ what_do(uint8_t times)
     {
 
     case 0:
-        update_tag();
-        queue_uart_send(http_get_tag,os_strlen(http_get_tag));
-        os_printf("send %s\n",http_get_tag);
-        at_state = WAIT;
+
+        os_timer_disarm(&check_id_timer);
+        os_timer_arm(&check_id_timer, 10000, 0);
+
+
         break;
 
     case 1://发请求绑定
@@ -698,9 +699,11 @@ what_do(uint8_t times)
 
         at_state = WAIT;
 
-        os_timer_disarm(&delay_discon_timer);
-        os_timer_arm(&delay_discon_timer, 20000, 0);//20秒后发送
-
+        if(http_dis == 0)
+        {
+            os_timer_disarm(&delay_discon_timer);
+            os_timer_arm(&delay_discon_timer, 20000, 0);//20秒后发送
+        }
 
         os_timer_disarm(&delay_update_timer);
         os_timer_arm(&delay_update_timer, 40000, 0);//20秒后发送
@@ -708,6 +711,7 @@ what_do(uint8_t times)
 
         break;
     case 4://再次获取任务id
+
         update_tag();
         queue_uart_send(http_get_tag,os_strlen(http_get_tag));
         os_printf("send %s\n",http_get_tag);
@@ -963,32 +967,32 @@ update_data()//上传mac数据
         scan_qz=1;
     }else scan_qz=0;
 
-    uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_FIX_MAC) +
-                                           os_strlen(parameter_deviceId) +
-                                           os_strlen(parameter_timestamp) +
-                                           os_strlen(parameter_tag) +
-                                           os_strlen(parameter_longitude) +
-                                           os_strlen(parameter_latitude) +
-                                           os_strlen(sta_str)+
-                                           os_strlen(fixedId));
-    if (body == NULL) {
-        VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-        return;
-    }
-
-    os_sprintf(body,
-               JSON_FIX_MAC,
-               parameter_deviceId,
-               parameter_timestamp,
-               parameter_tag,
-               parameter_longitude,
-               parameter_latitude,
-               sta_str,
-               fixedId);
 
     if(scan_qz == 1)
     {
-    post_state = UPMAC;
+        uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_FIX_MAC) +
+                                               os_strlen(parameter_deviceId) +
+                                               os_strlen(parameter_timestamp) +
+                                               os_strlen(parameter_tag) +
+                                               os_strlen(parameter_longitude) +
+                                               os_strlen(parameter_latitude) +
+                                               os_strlen(sta_str)+
+                                               os_strlen(fixedId));
+        if (body == NULL) {
+            VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
+            return;
+        }
+
+        os_sprintf(body,
+                   JSON_FIX_MAC,
+                   parameter_deviceId,
+                   parameter_timestamp,
+                   parameter_tag,
+                   parameter_longitude,
+                   parameter_latitude,
+                   sta_str,
+                   fixedId);
+
     uint8_t * url = NULL;
 
 
@@ -1006,35 +1010,48 @@ update_data()//上传mac数据
 //        ctx = NULL;
     }else
     {
-        uint8_t * all_str = "000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000001,";
-        os_memcpy(all_str+(1300-os_strlen(sta_str)),sta_str,os_strlen(sta_str));
-        uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_FIX_MAC) +
-                                               os_strlen(parameter_deviceId) +
-                                               os_strlen(parameter_timestamp) +
-                                               os_strlen(parameter_tag) +
-                                               os_strlen(parameter_longitude) +
-                                               os_strlen(parameter_latitude) +
-                                               os_strlen(all_str)+
-                                               os_strlen(fixedId));
-        if (body == NULL) {
-            VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
-            return;
+
+        if(os_strlen(sta_str)<11)
+        {
+            led_state = 5;
+            devicexx_io_led_timer_tick();
+            os_memset(uart_receive_at,'\0',sizeof(uart_receive_at));
+            queue_uart_send(read_adc,os_strlen(read_adc));
+            at_state = ZADC;
+        }else
+        {
+            uint8_t * all_str = "100000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,";
+            all_str[0]='0';
+            os_memcpy(all_str+(1300-os_strlen(sta_str)),sta_str,os_strlen(sta_str));
+            uint8_t * body2 = (uint8_t *) os_zalloc(os_strlen(JSON_FIX_MAC) +
+                                                   os_strlen(parameter_deviceId) +
+                                                   os_strlen(parameter_timestamp) +
+                                                   os_strlen(parameter_tag) +
+                                                   os_strlen(parameter_longitude) +
+                                                   os_strlen(parameter_latitude) +
+                                                   os_strlen(all_str)+
+                                                   os_strlen(fixedId));
+            if (body2 == NULL) {
+                VOWSTAR_WAN_DEBUG("%s: not enough memory\r\n", __func__);
+                return;
+            }
+
+            os_sprintf(body2,
+                       JSON_FIX_MAC,
+                       parameter_deviceId,
+                       parameter_timestamp,
+                       parameter_tag,
+                       parameter_longitude,
+                       parameter_latitude,
+                       all_str,
+                       fixedId);
+            str_ascii_str(body2);
+
+            if (body2)
+                os_free(body2);
         }
-
-        os_sprintf(body,
-                   JSON_FIX_MAC,
-                   parameter_deviceId,
-                   parameter_timestamp,
-                   parameter_tag,
-                   parameter_longitude,
-                   parameter_latitude,
-                   all_str,
-                   fixedId);
-        str_ascii_str(body);
-
     }
-    if (body)
-        os_free(body);
+
 
 }
 
@@ -1060,7 +1077,7 @@ nbiot_http_post()
         post_state = IDLE;
         os_timer_disarm(&upload_data);
         os_timer_setfn(&upload_data, (os_timer_func_t *)update_data, NULL);
-        os_timer_arm(&upload_data, 16000, 0);//开始上传数据
+        os_timer_arm(&upload_data, 21000, 0);//开始上传数据
 
 	}
         os_timer_disarm(&scan_timer);
@@ -1732,16 +1749,19 @@ uart_receive(const uint8_t * pdata, uint16_t length)
 
         if(os_strstr(uart_receive_at,"+EHTTPNMIC:"))//服务器有响应
         {
+            nb_signal_bad=0;
             if(os_strstr(uart_receive_at,"2264657363223a2273756363657373227d"))
             {
                 os_printf("{\"success\"}\n");
                 os_printf("{\"success\"}\n");
                 os_printf("{\"success\"}\n");
                 os_printf("{\"success\"}\n");
+                if(mac_inrom_flag==0)
+                    sector_str[sector_str_upload_flag_bit]='0';
                 mac_inrom_flag=0;
-                sector_str[sector_str_upload_flag_bit]='0';
                 if(all_sector_upload_done==0)
                 {
+                    connected_wifi=0;
                     send_flash_mac();
                 }else
                 {
@@ -1866,6 +1886,13 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             }
             else if(os_strstr(uart_receive_at,"e8aebee5a487e69caae4bdbfe794a8")||os_strstr(uart_receive_at,"e8aebee5a487e69caae7bb91e5ae9a"))//设备未使用：数据库没有这个设备；未绑定：数据库有设备但是为关联代理商
             {
+
+
+                os_timer_disarm(&restart_nb);
+
+                wifi_state = 0;
+                update_firmware();
+
 //                bind_flag = 0;
 //                at_state = WAIT;
                 os_timer_disarm(&check_id_timer);
@@ -2346,8 +2373,9 @@ send_flash_mac(void)
                 latitude_addr=NULL;
                 fixedId_addr=NULL;
 
-                uint8_t * all_str = "000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000001,";
-                os_memcpy(all_str+(1300-os_strlen(sta_str)),sta_str,os_strlen(sta_str));
+                uint8_t * all_str = "010000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,000000000000,";
+                all_str[1]='0';
+				os_memcpy(all_str+(1300-os_strlen(sta_str)),sta_str,os_strlen(sta_str));
                 uint8_t * body = (uint8_t *) os_zalloc(os_strlen(JSON_FIX_MAC) +
                                                        os_strlen(parameter_deviceId) +
                                                        os_strlen(parameter_timestamp) +
@@ -2462,8 +2490,7 @@ devicexx_app_load(void)
         os_memcpy(local_system_status.times, "111111111111",12);
 
 	}
-    if(local_system_status.version_num == 0)
-        local_system_status.version_num = 3;
+
 
 	if(local_system_status.times[0]>58 || local_system_status.times[0]<48 )
 	    os_memcpy(local_system_status.times, "111111111111",12);

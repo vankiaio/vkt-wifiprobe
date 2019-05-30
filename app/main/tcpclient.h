@@ -23,7 +23,7 @@ void tcp_server(void);
 void tcp_client_init(uint8_t ssid[32], uint8_t pwd[32]);
 void Check_WifiState(void);
 void post_callback(void * ctx, char * response_body, size_t response_body_size, int http_status, char * response_headers);
-
+void save_to_flash(void);
 
 #endif /* DXX_WP_OLED_APP_MAIN_TCPCLIENT_H_ */
 

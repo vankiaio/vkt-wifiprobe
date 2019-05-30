@@ -90,11 +90,17 @@ void ICACHE_FLASH_ATTR system_init_done()
     os_printf("\r\n");
     // Init platform
 
+        platform_init();
 
 
-    platform_init();
-//    update_white_list();
-
+//    devicexx_app_load();
+//    uint8  sector_str[4096];
+//uint8_t i;
+//    for(i=0;i<20;i++)
+//    {
+//        os_printf("SpiFlashReadResult:%d\n",spi_flash_read((518+i)*4*1024,(uint32 *)sector_str,4096));
+//        os_printf("sector_str:\n%s\n",sector_str);
+//    }
 
 }
 
