@@ -51,12 +51,21 @@ post_callback(void * ctx, char * response_body, size_t response_body_size, int h
     os_printf("%s: status:%d\n", __func__, http_status);
     if(http_status == -1)
     {
+        mac_inrom_flag=0;
+        write_to_flash();
+        scan_qz=0;
+        connected_wifi=0;
 
+        app_save(0);
+        queue_uart_send(zgmode,os_strlen(zgmode));
+        os_printf("send %s\n",zgmode);
+        at_state = ZGMODE;
+        wifi_bad++;
         return;
     }
     if ((NULL != response_body) && (0 != response_body_size) && (NULL != response_headers)) {
         if (200 == http_status) {
-
+            wifi_bad=0;
             connected_wifi=1;
             // Process and try encrypt data
             for(i=0;i<response_body_size-1;i++)
@@ -360,7 +369,7 @@ Check_WifiState(void) {
 	        scan_qz=0;
 	        os_timer_disarm(&checkTimer_wifistate); //取消定时器定时
 
-	        wifi_state = 0;
+
 	        mac_inrom_flag=0;
 	        all_sector_upload_done=0;
 	        write_to_flash();
@@ -371,7 +380,7 @@ Check_WifiState(void) {
 	        at_state = ZGMODE;
 	        connected_wifi=0;
 	    }
-
+        wifi_state = 0;
 	}
 }
 

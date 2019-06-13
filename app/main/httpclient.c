@@ -16,6 +16,7 @@
 #include "tcpclient.h"
 #include "httpclient.h"
 #include "devicexx_app.h"
+#include "platform.h"
 
 // Internal state.
 typedef struct request_args_t {
@@ -367,7 +368,10 @@ static void ICACHE_FLASH_ATTR error_callback(void *arg, sint8 errType)
     connected_wifi=0;
 
     app_save(0);
-    start();
+    queue_uart_send(zgmode,os_strlen(zgmode));
+    os_printf("send %s\n",zgmode);
+    at_state = ZGMODE;
+    wifi_bad++;
 	//Õ¯¬Áπ ’œ
 	//get_rssi();
 }

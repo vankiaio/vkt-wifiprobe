@@ -983,6 +983,16 @@ update_data()//上传mac数据
             return;
         }
 
+//        uint8_t i;
+//        for(i=0;i<12;i++)
+//        {
+//            if(parameter_timestamp[i]>57 || parameter_timestamp[i]<48)
+//            {
+//                os_memcpy(parameter_timestamp,"000000000000",os_strlen(parameter_timestamp));
+//                break;
+//            }
+//        }
+
         os_sprintf(body,
                    JSON_FIX_MAC,
                    parameter_deviceId,
@@ -1600,23 +1610,21 @@ uart_receive(const uint8_t * pdata, uint16_t length)
             {
                 os_printf("nb_signal_bad\r\n");
                 nb_signal_bad = 1;
-                post_state=CHECK_ID;
-
-                switch_to_wifi();
+//                post_state=CHECK_ID;
+//                switch_to_wifi();
             }
             else
             {
                 os_printf("nb_signal_ok\r\n");
                 nb_signal_bad = 0;
-//                if(all_sector_upload_done==0 || mac_inrom_flag==1){
-//                    read_sector();
-//                }else
-//                if(first_get_resq == 0)
-//                {
-                    nbiot_http_post();
 
-//                }else first_get_resq=0;
+//                nbiot_http_post();
+
+
             }
+
+            nbiot_http_post();
+
             addr1 = NULL;
             addr2 = NULL;
 
@@ -2130,14 +2138,17 @@ write_to_flash(void)
 void ICACHE_FLASH_ATTR
 Deduplication(void)//去重，缓存
 {
-    os_printf("Gather done\n");
-
-    update_timestamp();
-
-//    os_timer_disarm(&channelHop_timer);
     wifi_promiscuous_enable(0);
     wifi_unregister_send_pkt_freedom_cb();
     wifi_station_disconnect();
+
+    os_printf("Gather done\n");
+
+    update_timestamp();
+#if HOP_JUMP_ENABLE
+    os_timer_disarm(&channelHop_timer);
+#endif
+
 
 //    os_printf( "mac string %s\n", sta_str );
     uint8 j;
@@ -2490,7 +2501,7 @@ devicexx_app_load(void)
         os_memcpy(local_system_status.times, "111111111111",12);
 
 	}
-
+//    local_system_status.version_num = 5;
 
 	if(local_system_status.times[0]>58 || local_system_status.times[0]<48 )
 	    os_memcpy(local_system_status.times, "111111111111",12);

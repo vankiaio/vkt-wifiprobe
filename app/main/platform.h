@@ -27,5 +27,7 @@ extern os_timer_t wait_nb_con_timer;
 extern os_timer_t timer_wait_con_wifi;
 //#define OLED
 
+extern uint8_t wifi_bad ;
+
 
 #endif /* __PLATFORM_H__ */

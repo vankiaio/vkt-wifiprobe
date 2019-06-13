@@ -59,7 +59,7 @@ struct scan_inf {
     uint8 channel[128];
 }scan_inf;
 
-
+uint8_t wifi_bad =0;
 void ICACHE_FLASH_ATTR
 delay_power_on()
 {
@@ -349,7 +349,7 @@ scan_done(void *arg, STATUS status)
     }
 
     os_printf( "ap_mac string %s\n", ap_str );
-    if(scan_qz == 1)
+    if(scan_qz == 1 && wifi_bad == 0)
     {
 //        if(STATION_GOT_IP != wifi_station_get_connect_status())
         {
@@ -357,8 +357,13 @@ scan_done(void *arg, STATUS status)
             scan_qz=0;
             os_timer_disarm(&restart_nb);
         }
+    }else
+    {
+        wifi_bad++;
+        if(wifi_bad>6)
+            wifi_bad=0;
+        scan_qz=0;
     }
-
     if(get_gps == 0)
     {
         os_timer_disarm(&timer_wait_con_wifi);
